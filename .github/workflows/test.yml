@@ -74,3 +74,57 @@ jobs:
         run: cargo generate-lockfile
       - name: cargo test
         run: cargo test --locked --all-features --all-targets
+  coverage:
+    # use llvm-cov to build and collect coverage and outputs in a format that
+    # is compatible with codecov.io
+    #
+    # the codecov upload below is disabled until a CODECOV_TOKEN from
+    #
+    #   https://app.codecov.io/gh/helsing-ai/vanavro/settings
+    #
+    # is set in two places on the repo:
+    #
+    # - https://github.com/helsing-ai/vanavro/settings/secrets/actions
+    # - https://github.com/helsing-ai/vanavro/settings/secrets/dependabot
+    #
+    # (the latter is needed for codecov uploads to work with Dependabot PRs)
+    #
+    # PRs coming from forks of the repo will not have access to the token, but
+    # for those, codecov allows uploading coverage reports without a token. see
+    #
+    #   https://github.com/codecov/feedback/issues/112
+    runs-on: ubuntu-latest
+    name: ubuntu / stable / coverage
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # tag=v6.0.2
+        with:
+          submodules: true
+      - name: Install avro-tools
+        uses: ./.github/actions/avro-tools
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
+        with:
+          toolchain: stable
+          components: llvm-tools-preview
+      - name: cargo install cargo-llvm-cov
+        uses: taiki-e/install-action@065d6a08a14e61e89fb0a4c10eecdbdef39c7d8e # tag=v2.85.4
+        with:
+          tool: cargo-llvm-cov
+      - name: cargo generate-lockfile
+        if: hashFiles('Cargo.lock') == ''
+        run: cargo generate-lockfile
+      - name: cargo llvm-cov
+        run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
+      - name: Coverage summary
+        # reuses the profile data from the previous step; no re-run of the tests
+        run: |
+          cargo llvm-cov report | tee coverage.txt
+          { echo '```'; cat coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Record Rust version
+        run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
+      # - name: Upload to codecov.io
+      #   uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # tag=v7.0.0
+      #   with:
+      #     fail_ci_if_error: true
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     env_vars: OS,RUST
