@@ -1,0 +1,42 @@
+[
+  {
+    "type": "record",
+    "name": "Money",
+    "namespace": "custom_logical",
+    "logicalType": "money",
+    "fields": [
+      {"name": "amount", "type": "long"},
+      {"name": "currency", "type": "string"}
+    ]
+  },
+  {
+    "type": "record",
+    "name": "Cents",
+    "namespace": "custom_logical",
+    "logicalType": "cents",
+    "fields": [
+      {"name": "value", "type": "long"}
+    ]
+  },
+  {
+    "type": "record",
+    "name": "CustomLogical",
+    "namespace": "custom_logical",
+    "fields": [
+      {"name": "homepage", "type": {"type": "string", "logicalType": "url"}, "default": "https://example.com/"},
+      {"name": "contact", "type": {"type": "string", "logicalType": "email"}, "default": "hi@example.com"},
+      {"name": "mirrors", "type": {"type": "array", "items": {"type": "string", "logicalType": "url"}}},
+      {"name": "fallback", "type": ["null", {"type": "string", "logicalType": "url"}], "default": null},
+      {"name": "price", "type": "custom_logical.Money"},
+      {"name": "channel", "type": ["null", {"type": "string", "logicalType": "email"}, "custom_logical.Money", "custom_logical.Cents", "int"]}
+    ]
+  },
+  {
+    "type": "record",
+    "name": "Notification",
+    "namespace": "custom_logical",
+    "fields": [
+      {"name": "via", "type": ["null", {"type": "string", "logicalType": "email"}, "custom_logical.Money", "custom_logical.Cents", "int"]}
+    ]
+  }
+]

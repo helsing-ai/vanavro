@@ -1,0 +1,17 @@
+// Trimmed variant of Apache Avro's `import.avdl` that imports only the local
+// supporting fixtures (`baz.avsc`, `foo.avsc`, `bar.avpr`) and drops the
+// `OnTheClasspath.*` imports that depend on Java classpath resolution.
+//
+// Apache License 2.0 — see NOTICE.
+
+@namespace("org.foo")
+protocol Import {
+  import schema "baz.avsc";
+  import schema "foo.avsc";
+  import protocol "bar.avpr";
+
+  record Bar {
+    ns.other.schema.Baz baz;
+    Foo foo;
+  }
+}

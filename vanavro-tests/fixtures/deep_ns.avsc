@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "Deep",
+  "namespace": "a.b.c",
+  "fields": [
+    {"name": "shared", "type": {
+      "type": "record", "name": "Shared", "namespace": "a",
+      "fields": [{"name": "id", "type": "long"}]
+    }},
+    {"name": "again", "type": "a.Shared"},
+    {"name": "local", "type": {
+      "type": "enum", "name": "Local", "symbols": ["ONE", "TWO"]
+    }}
+  ]
+}

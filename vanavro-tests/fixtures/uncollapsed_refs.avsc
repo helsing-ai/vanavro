@@ -1,0 +1,26 @@
+[
+  {
+    "type": "record",
+    "name": "Scalar",
+    "namespace": "uncollapsed_refs",
+    "fields": [
+      {"name": "choice", "type": ["int", "string", "null"]}
+    ]
+  },
+  {
+    "type": "record",
+    "name": "Outer",
+    "namespace": "uncollapsed_refs",
+    "fields": [
+      {"name": "inner", "type": "uncollapsed_refs.Scalar"}
+    ]
+  },
+  {
+    "type": "record",
+    "name": "Tree",
+    "namespace": "uncollapsed_refs",
+    "fields": [
+      {"name": "node", "type": ["null", "int", "uncollapsed_refs.Tree"]}
+    ]
+  }
+]

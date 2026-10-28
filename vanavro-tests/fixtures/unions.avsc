@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "Unions",
+  "namespace": "unions",
+  "fields": [
+    {"name": "maybe", "type": ["null", "string"]},
+    {"name": "choice", "type": ["int", "string", "boolean"]}
+  ]
+}

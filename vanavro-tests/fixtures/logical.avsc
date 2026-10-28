@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "Logical",
+  "namespace": "logical",
+  "fields": [
+    {"name": "day", "type": {"type": "int", "logicalType": "date"}},
+    {"name": "ms_of_day", "type": {"type": "int", "logicalType": "time-millis"}},
+    {"name": "us_of_day", "type": {"type": "long", "logicalType": "time-micros"}},
+    {"name": "ts_ms", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "ts_us", "type": {"type": "long", "logicalType": "timestamp-micros"}},
+    {"name": "id", "type": {"type": "string", "logicalType": "uuid"}}
+  ]
+}

@@ -1,0 +1,122 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod tree {
+    #[derive(Debug, Clone, PartialEq, ::serde::Deserialize)]
+    #[serde(try_from = "TreeRepr")]
+    pub enum Tree {
+        Null(()),
+        Int(i32),
+        Tree(Box<Tree>),
+    }
+
+    impl ::serde::Serialize for Tree {
+        fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+        where
+            S: ::serde::Serializer,
+        {
+            use ::serde::ser::SerializeStruct as _;
+            struct Arm<'a>(&'a Tree);
+            impl ::serde::Serialize for Arm<'_> {
+                fn serialize<S>(
+                    &self,
+                    serializer: S,
+                ) -> ::std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    match self.0 {
+                        Tree::Null(()) => {
+                            serializer
+                                .serialize_newtype_variant("Tree", 0u32, "null", &())
+                        }
+                        Tree::Int(val) => {
+                            serializer
+                                .serialize_newtype_variant("Tree", 1u32, "int", val)
+                        }
+                        Tree::Tree(val) => {
+                            serializer
+                                .serialize_newtype_variant("Tree", 2u32, "tree.Tree", val)
+                        }
+                    }
+                }
+            }
+            let mut st = serializer.serialize_struct("Tree", 1)?;
+            st.serialize_field("node", &Arm(self))?;
+            st.end()
+        }
+    }
+
+    impl Tree {
+        /// Statically constructed Avro schema for this type (SPEC §12).
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_tree_1Tree(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`) — SPEC §12.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Tree {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(::serde::Deserialize)]
+    #[serde(rename = "Tree")]
+    struct TreeRepr {
+        node: TreeReprUnion,
+    }
+
+    #[derive(::serde::Deserialize)]
+    enum TreeReprUnion {
+        #[serde(rename = "null")]
+        Null(()),
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "tree.Tree")]
+        Tree(Box<Tree>),
+    }
+
+    impl ::std::convert::From<TreeRepr> for Tree {
+        fn from(repr: TreeRepr) -> Self {
+            match repr.node {
+                TreeReprUnion::Null(()) => Self::Null(()),
+                TreeReprUnion::Int(val) => Self::Int(val),
+                TreeReprUnion::Tree(val) => Self::Tree(val),
+            }
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_tree_1Tree(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("tree.Tree")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "node".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::Int, build_tree_1Tree(defined)])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("node".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

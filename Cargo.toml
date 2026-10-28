@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = ["vanavro", "vanavro-tests"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+# Floor set by `uuid` 1.29 (the highest `rust-version` in the dependency tree).
+rust-version = "1.89"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+description = "An Apache Avro-to-Rust code generator"
+repository = "https://github.com/helsing-ai/vanavro"
+authors = ["Helsing GmbH"]
+keywords = ["avro", "codegen", "serde", "schema", "apache-avro"]
+categories = ["development-tools::build-utils", "encoding", "command-line-utilities"]
+
+[workspace.dependencies]
+apache-avro = "0.22.0"
+serde = "1"
+serde_with = "3.0"
+url = { version = "2", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }

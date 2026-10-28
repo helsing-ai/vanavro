@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "TreeNode",
+  "namespace": "recursive",
+  "fields": [
+    {"name": "value", "type": "int"},
+    {"name": "next", "type": ["null", "TreeNode"]}
+  ]
+}
