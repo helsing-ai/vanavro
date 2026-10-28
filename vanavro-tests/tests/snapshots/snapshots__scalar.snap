@@ -1,0 +1,131 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod scalar {
+    #[derive(Debug, Clone, PartialEq, ::serde::Deserialize)]
+    #[serde(try_from = "ScalarRepr")]
+    pub enum Scalar {
+        Int(i32),
+        String(String),
+        Boolean(bool),
+        Null(()),
+    }
+
+    impl ::serde::Serialize for Scalar {
+        fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+        where
+            S: ::serde::Serializer,
+        {
+            use ::serde::ser::SerializeStruct as _;
+            struct Arm<'a>(&'a Scalar);
+            impl ::serde::Serialize for Arm<'_> {
+                fn serialize<S>(
+                    &self,
+                    serializer: S,
+                ) -> ::std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    match self.0 {
+                        Scalar::Int(val) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 0u32, "int", val)
+                        }
+                        Scalar::String(val) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 1u32, "string", val)
+                        }
+                        Scalar::Boolean(val) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 2u32, "boolean", val)
+                        }
+                        Scalar::Null(()) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 3u32, "null", &())
+                        }
+                    }
+                }
+            }
+            let mut st = serializer.serialize_struct("Scalar", 1)?;
+            st.serialize_field("choice", &Arm(self))?;
+            st.end()
+        }
+    }
+
+    impl Scalar {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_scalar_1Scalar(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Scalar {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(::serde::Deserialize)]
+    #[serde(rename = "Scalar")]
+    struct ScalarRepr {
+        choice: ScalarReprUnion,
+    }
+
+    #[derive(::serde::Deserialize)]
+    enum ScalarReprUnion {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "string")]
+        String(String),
+        #[serde(rename = "boolean")]
+        Boolean(bool),
+        #[serde(rename = "null")]
+        Null(()),
+    }
+
+    impl ::std::convert::From<ScalarRepr> for Scalar {
+        fn from(repr: ScalarRepr) -> Self {
+            match repr.choice {
+                ScalarReprUnion::Int(val) => Self::Int(val),
+                ScalarReprUnion::String(val) => Self::String(val),
+                ScalarReprUnion::Boolean(val) => Self::Boolean(val),
+                ScalarReprUnion::Null(()) => Self::Null(()),
+            }
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_scalar_1Scalar(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("scalar.Scalar")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "choice".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::String, ::apache_avro::Schema::Boolean,
+                ::apache_avro::Schema::Null])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("choice".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

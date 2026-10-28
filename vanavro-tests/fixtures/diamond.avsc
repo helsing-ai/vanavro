@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "Root",
+  "namespace": "diamond",
+  "fields": [
+    {"name": "left", "type": {
+      "type": "record", "name": "L",
+      "fields": [{"name": "shared", "type": {
+        "type": "record", "name": "Shared",
+        "fields": [{"name": "id", "type": "long"}]
+      }}]
+    }},
+    {"name": "right", "type": {
+      "type": "record", "name": "R",
+      "fields": [{"name": "shared", "type": "diamond.Shared"}]
+    }}
+  ]
+}

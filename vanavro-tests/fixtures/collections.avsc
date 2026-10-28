@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "Collections",
+  "namespace": "collections",
+  "fields": [
+    {"name": "list", "type": {"type": "array", "items": "long"}},
+    {"name": "dict", "type": {"type": "map", "values": "string"}},
+    {"name": "nested", "type": {"type": "array", "items": {"type": "array", "items": "int"}}}
+  ]
+}

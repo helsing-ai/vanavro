@@ -1,0 +1,1 @@
+{"primaryKey":{"long":123456789012},"nickname":{"string":"nick"},"single":{"string":"solo"},"many":{"boolean":true},"tags":[{"string":"a"},null,{"long":42}],"scores":{"x":{"int":3},"y":{"double":1.5}},"optionalScores":{"map":{"w":{"double":2.5}}},"variantArray":{"array":[{"int":1},{"string":"k"}]},"alpha":{"string":"al"},"beta":{"double":9.75}}

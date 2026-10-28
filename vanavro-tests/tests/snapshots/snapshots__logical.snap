@@ -1,0 +1,94 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod logical {
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Logical {
+        pub day: i32,
+        pub ms_of_day: i32,
+        pub us_of_day: i64,
+        pub ts_ms: i64,
+        pub ts_us: i64,
+        pub id: ::uuid::Uuid,
+    }
+
+    impl Logical {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_logical_1Logical(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Logical {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_logical_1Logical(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("logical.Logical")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "day".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Date, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "ms_of_day".to_string(), doc
+                : None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::TimeMillis, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "us_of_day".to_string(), doc
+                : None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::TimeMicros, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "ts_ms".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::TimestampMillis, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "ts_us".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::TimestampMicros, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "id".to_string(), doc : None,
+                aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Uuid(::apache_avro::schema::UuidSchema::String),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("day".to_string(), 0),
+                ("ms_of_day".to_string(), 1),
+                ("us_of_day".to_string(), 2),
+                ("ts_ms".to_string(), 3),
+                ("ts_us".to_string(), 4),
+                ("id".to_string(), 5),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

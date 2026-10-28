@@ -1,0 +1,288 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod nested {
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Nested {
+        pub color: Color,
+        #[serde(with = "::apache_avro::serde::fixed")]
+        pub tag: Tag,
+        pub inline: Inline,
+        pub inlines: Vec<Elem>,
+    }
+
+    impl Nested {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_nested_1Nested(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Nested {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    #[non_exhaustive]
+    pub enum Color {
+        #[serde(rename = "RED")]
+        Red,
+        #[serde(rename = "GREEN")]
+        Green,
+        #[serde(rename = "BLUE")]
+        Blue,
+    }
+
+    impl Color {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_nested_1Color(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Color {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    pub type Tag = [u8; 4];
+    /// Statically constructed Avro schema for [`Tag`].
+    pub fn tag_schema() -> &'static ::apache_avro::Schema {
+        static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+        { build_nested_1Tag(&mut ::std::collections::HashSet::new()) });
+        &SCHEMA
+    }
+
+    /// Fingerprint of [`tag_schema`] under digest `D`.
+    pub fn tag_fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+        tag_schema().fingerprint::<D>()
+    }
+
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Inline {
+        pub v: i32,
+    }
+
+    impl Inline {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_nested_1Inline(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Inline {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Elem {
+        pub w: i64,
+    }
+
+    impl Elem {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_nested_1Elem(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Elem {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_nested_1Color(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("nested.Color")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Enum(::apache_avro::schema::EnumSchema {
+            name,
+            aliases: None,
+            doc: None,
+            symbols: vec!["RED".to_string(), "GREEN".to_string(), "BLUE".to_string()],
+            default: None,
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_nested_1Elem(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("nested.Elem")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "w".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Long,
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("w".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_nested_1Inline(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("nested.Inline")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "v".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Int,
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("v".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_nested_1Nested(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("nested.Nested")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "color".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                build_nested_1Color(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "tag".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                build_nested_1Tag(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "inline".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                build_nested_1Inline(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "inlines".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema { items :
+                Box::new(build_nested_1Elem(defined)), attributes :
+                ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("color".to_string(), 0),
+                ("tag".to_string(), 1),
+                ("inline".to_string(), 2),
+                ("inlines".to_string(), 3),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_nested_1Tag(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("nested.Tag")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Fixed(::apache_avro::schema::FixedSchema {
+            name,
+            aliases: None,
+            doc: None,
+            size: 4,
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

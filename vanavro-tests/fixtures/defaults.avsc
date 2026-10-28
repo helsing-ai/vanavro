@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "name": "Defaults",
+  "namespace": "defaults",
+  "fields": [
+    {"name": "count", "type": "int", "default": 7},
+    {"name": "label", "type": "string", "default": "anon"},
+    {
+      "name": "inner",
+      "type": {
+        "type": "record",
+        "name": "Inner",
+        "fields": [
+          {"name": "v", "type": "int"},
+          {"name": "opt", "type": ["null", "int"], "default": null}
+        ]
+      },
+      "default": {"v": 1, "opt": null}
+    }
+  ]
+}

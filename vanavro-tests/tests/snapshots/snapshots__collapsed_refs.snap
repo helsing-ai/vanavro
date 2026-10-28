@@ -1,0 +1,395 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod collapsed_refs {
+    #[derive(Debug, Clone, PartialEq, ::serde::Deserialize)]
+    #[serde(try_from = "NullOnlyRepr")]
+    pub enum NullOnly {
+        Null(()),
+    }
+
+    impl ::serde::Serialize for NullOnly {
+        fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+        where
+            S: ::serde::Serializer,
+        {
+            use ::serde::ser::SerializeStruct as _;
+            struct Arm<'a>(&'a NullOnly);
+            impl ::serde::Serialize for Arm<'_> {
+                fn serialize<S>(
+                    &self,
+                    serializer: S,
+                ) -> ::std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    match self.0 {
+                        NullOnly::Null(()) => {
+                            serializer
+                                .serialize_newtype_variant("NullOnly", 0u32, "null", &())
+                        }
+                    }
+                }
+            }
+            let mut st = serializer.serialize_struct("NullOnly", 1)?;
+            st.serialize_field("choice", &Arm(self))?;
+            st.end()
+        }
+    }
+
+    impl NullOnly {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                build_collapsed_0refs_1NullOnly(&mut ::std::collections::HashSet::new())
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for NullOnly {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(::serde::Deserialize)]
+    #[serde(rename = "NullOnly")]
+    struct NullOnlyRepr {
+        choice: NullOnlyReprUnion,
+    }
+
+    #[derive(::serde::Deserialize)]
+    enum NullOnlyReprUnion {
+        #[serde(rename = "null")]
+        Null(()),
+    }
+
+    impl ::std::convert::From<NullOnlyRepr> for NullOnly {
+        fn from(repr: NullOnlyRepr) -> Self {
+            match repr.choice {
+                NullOnlyReprUnion::Null(()) => Self::Null(()),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub struct Outer {
+        pub inner: Scalar,
+    }
+
+    impl Outer {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_collapsed_0refs_1Outer(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Outer {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Deserialize)]
+    #[serde(try_from = "ScalarRepr")]
+    pub enum Scalar {
+        Int(i32),
+        String(String),
+        Null(()),
+    }
+
+    impl ::serde::Serialize for Scalar {
+        fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+        where
+            S: ::serde::Serializer,
+        {
+            use ::serde::ser::SerializeStruct as _;
+            struct Arm<'a>(&'a Scalar);
+            impl ::serde::Serialize for Arm<'_> {
+                fn serialize<S>(
+                    &self,
+                    serializer: S,
+                ) -> ::std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    match self.0 {
+                        Scalar::Int(val) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 0u32, "int", val)
+                        }
+                        Scalar::String(val) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 1u32, "string", val)
+                        }
+                        Scalar::Null(()) => {
+                            serializer
+                                .serialize_newtype_variant("Scalar", 2u32, "null", &())
+                        }
+                    }
+                }
+            }
+            let mut st = serializer.serialize_struct("Scalar", 1)?;
+            st.serialize_field("choice", &Arm(self))?;
+            st.end()
+        }
+    }
+
+    impl Scalar {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_collapsed_0refs_1Scalar(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Scalar {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(::serde::Deserialize)]
+    #[serde(rename = "Scalar")]
+    struct ScalarRepr {
+        choice: ScalarReprUnion,
+    }
+
+    #[derive(::serde::Deserialize)]
+    enum ScalarReprUnion {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "string")]
+        String(String),
+        #[serde(rename = "null")]
+        Null(()),
+    }
+
+    impl ::std::convert::From<ScalarRepr> for Scalar {
+        fn from(repr: ScalarRepr) -> Self {
+            match repr.choice {
+                ScalarReprUnion::Int(val) => Self::Int(val),
+                ScalarReprUnion::String(val) => Self::String(val),
+                ScalarReprUnion::Null(()) => Self::Null(()),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Deserialize)]
+    #[serde(try_from = "TreeRepr")]
+    pub enum Tree {
+        Null(()),
+        Int(i32),
+        Tree(Box<Tree>),
+    }
+
+    impl ::serde::Serialize for Tree {
+        fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+        where
+            S: ::serde::Serializer,
+        {
+            use ::serde::ser::SerializeStruct as _;
+            struct Arm<'a>(&'a Tree);
+            impl ::serde::Serialize for Arm<'_> {
+                fn serialize<S>(
+                    &self,
+                    serializer: S,
+                ) -> ::std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    match self.0 {
+                        Tree::Null(()) => {
+                            serializer
+                                .serialize_newtype_variant("Tree", 0u32, "null", &())
+                        }
+                        Tree::Int(val) => {
+                            serializer
+                                .serialize_newtype_variant("Tree", 1u32, "int", val)
+                        }
+                        Tree::Tree(val) => {
+                            serializer
+                                .serialize_newtype_variant(
+                                    "Tree",
+                                    2u32,
+                                    "collapsed_refs.Tree",
+                                    val,
+                                )
+                        }
+                    }
+                }
+            }
+            let mut st = serializer.serialize_struct("Tree", 1)?;
+            st.serialize_field("node", &Arm(self))?;
+            st.end()
+        }
+    }
+
+    impl Tree {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_collapsed_0refs_1Tree(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Tree {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(::serde::Deserialize)]
+    #[serde(rename = "Tree")]
+    struct TreeRepr {
+        node: TreeReprUnion,
+    }
+
+    #[derive(::serde::Deserialize)]
+    enum TreeReprUnion {
+        #[serde(rename = "null")]
+        Null(()),
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "collapsed_refs.Tree")]
+        Tree(Box<Tree>),
+    }
+
+    impl ::std::convert::From<TreeRepr> for Tree {
+        fn from(repr: TreeRepr) -> Self {
+            match repr.node {
+                TreeReprUnion::Null(()) => Self::Null(()),
+                TreeReprUnion::Int(val) => Self::Int(val),
+                TreeReprUnion::Tree(val) => Self::Tree(val),
+            }
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_collapsed_0refs_1NullOnly(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("collapsed_refs.NullOnly")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "choice".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("choice".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_collapsed_0refs_1Outer(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("collapsed_refs.Outer")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "inner".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                build_collapsed_0refs_1Scalar(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("inner".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_collapsed_0refs_1Scalar(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("collapsed_refs.Scalar")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "choice".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::String, ::apache_avro::Schema::Null])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("choice".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_collapsed_0refs_1Tree(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("collapsed_refs.Tree")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "node".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::Int, build_collapsed_0refs_1Tree(defined)])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("node".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

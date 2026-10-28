@@ -1,0 +1,87 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod primitives {
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub struct Primitives {
+        pub b: bool,
+        pub i: i32,
+        pub l: i64,
+        pub f: f32,
+        pub d: f64,
+        #[serde(with = "::apache_avro::serde::bytes")]
+        pub by: Vec<u8>,
+        pub s: String,
+    }
+
+    impl Primitives {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_primitives_1Primitives(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Primitives {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_primitives_1Primitives(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("primitives.Primitives")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "b".to_string(), doc : None,
+                aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Boolean, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "i".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Int,
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "l".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Long,
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "f".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Float,
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "d".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Double,
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "by".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Bytes,
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "s".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::String,
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("b".to_string(), 0),
+                ("i".to_string(), 1),
+                ("l".to_string(), 2),
+                ("f".to_string(), 3),
+                ("d".to_string(), 4),
+                ("by".to_string(), 5),
+                ("s".to_string(), 6),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

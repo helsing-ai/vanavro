@@ -1,0 +1,76 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod collections {
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub struct Collections {
+        pub list: Vec<i64>,
+        pub dict: ::std::collections::HashMap<String, String>,
+        pub nested: Vec<Vec<i32>>,
+    }
+
+    impl Collections {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_collections_1Collections(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Collections {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_collections_1Collections(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("collections.Collections")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "list".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema { items :
+                Box::new(::apache_avro::Schema::Long), attributes :
+                ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "dict".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Map(::apache_avro::schema::MapSchema { types :
+                Box::new(::apache_avro::Schema::String), attributes :
+                ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "nested".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema { items :
+                Box::new(::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema
+                { items : Box::new(::apache_avro::Schema::Int), attributes :
+                ::std::collections::BTreeMap::new(), })), attributes :
+                ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("list".to_string(), 0),
+                ("dict".to_string(), 1),
+                ("nested".to_string(), 2),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

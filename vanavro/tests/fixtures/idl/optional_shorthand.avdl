@@ -1,0 +1,13 @@
+@namespace("org.apache.avro.gen")
+protocol OptionalShorthand {
+
+	record RecordWithUnion {
+		union { null, string } optionalString1 = null;
+		string? optionalString2 = null;
+		string? optionalString3; // No default value
+
+		union { string, null } optionalString4 = "something";
+		string? optionalString5 = "something else";
+	}
+
+}

@@ -1,0 +1,163 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod defaults {
+    pub(super) fn default_defaults_count() -> i32 {
+        7i32
+    }
+
+    pub(super) fn default_defaults_label() -> String {
+        "anon".to_string()
+    }
+
+    pub(super) fn default_defaults_inner() -> Inner {
+        Inner { v: 1i32, opt: None }
+    }
+
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Defaults {
+        #[serde(default = "default_defaults_count")]
+        pub count: i32,
+        #[serde(default = "default_defaults_label")]
+        pub label: String,
+        #[serde(default = "default_defaults_inner")]
+        pub inner: Inner,
+    }
+
+    impl Defaults {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_defaults_1Defaults(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Defaults {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Inner {
+        pub v: i32,
+        #[serde(default)]
+        pub opt: Option<i32>,
+    }
+
+    impl Inner {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_defaults_1Inner(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Inner {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_defaults_1Defaults(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("defaults.Defaults")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "count".to_string(), doc :
+                None, aliases : vec![], default :
+                Some(::serde_json::Value::Number(::serde_json::Number::from(7i64))),
+                schema : ::apache_avro::Schema::Int, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "label".to_string(), doc :
+                None, aliases : vec![], default : Some(::serde_json::Value::String("anon"
+                .to_string())), schema : ::apache_avro::Schema::String, custom_attributes
+                : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "inner".to_string(), doc :
+                None, aliases : vec![], default :
+                Some(::serde_json::Value::Object(::serde_json::Map::from_iter([("opt"
+                .to_string(), ::serde_json::Value::Null), ("v".to_string(),
+                ::serde_json::Value::Number(::serde_json::Number::from(1i64)))]))),
+                schema : build_defaults_1Inner(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("count".to_string(), 0),
+                ("label".to_string(), 1),
+                ("inner".to_string(), 2),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_defaults_1Inner(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("defaults.Inner")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "v".to_string(), doc : None,
+                aliases : vec![], default : None, schema : ::apache_avro::Schema::Int,
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "opt".to_string(), doc :
+                None, aliases : vec![], default : Some(::serde_json::Value::Null), schema
+                :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::Int])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("v".to_string(), 0),
+                ("opt".to_string(), 1),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

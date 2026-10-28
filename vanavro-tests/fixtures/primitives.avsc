@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "Primitives",
+  "namespace": "primitives",
+  "fields": [
+    {"name": "b", "type": "boolean"},
+    {"name": "i", "type": "int"},
+    {"name": "l", "type": "long"},
+    {"name": "f", "type": "float"},
+    {"name": "d", "type": "double"},
+    {"name": "by", "type": "bytes"},
+    {"name": "s", "type": "string"}
+  ]
+}

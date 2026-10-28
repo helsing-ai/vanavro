@@ -1,0 +1,486 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod named_unions {
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum CatalogueUnion {
+        #[serde(rename = "string")]
+        String(String),
+        #[serde(rename = "long")]
+        Long(i64),
+    }
+
+    impl CatalogueUnion {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::String, ::apache_avro::Schema::Long
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for CatalogueUnion {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Single {
+        #[serde(rename = "string")]
+        String(String),
+    }
+
+    impl Single {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![::apache_avro::Schema::String],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Single {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Many {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "string")]
+        String(String),
+        #[serde(rename = "boolean")]
+        Boolean(bool),
+        #[serde(rename = "bytes")]
+        Bytes(Vec<u8>),
+    }
+
+    impl Many {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Int, ::apache_avro::Schema::String,
+                                ::apache_avro::Schema::Boolean, ::apache_avro::Schema::Bytes
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Many {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Tag {
+        #[serde(rename = "null")]
+        Null(()),
+        #[serde(rename = "string")]
+        String(String),
+        #[serde(rename = "long")]
+        Long(i64),
+    }
+
+    impl Tag {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Null, ::apache_avro::Schema::String,
+                                ::apache_avro::Schema::Long
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Tag {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Score {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "double")]
+        Double(f64),
+    }
+
+    impl Score {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Int, ::apache_avro::Schema::Double
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Score {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Weight {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "double")]
+        Double(f64),
+    }
+
+    impl Weight {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Int, ::apache_avro::Schema::Double
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Weight {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "string")]
+        String(String),
+    }
+
+    impl Kind {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Int, ::apache_avro::Schema::String
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Kind {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Alpha {
+        #[serde(rename = "string")]
+        String(String),
+        #[serde(rename = "long")]
+        Long(i64),
+    }
+
+    impl Alpha {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::String, ::apache_avro::Schema::Long
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Alpha {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum Beta {
+        #[serde(rename = "int")]
+        Int(i32),
+        #[serde(rename = "double")]
+        Double(f64),
+    }
+
+    impl Beta {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Int, ::apache_avro::Schema::Double
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Beta {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    /// Every `enum` union-naming shape in one record (SPEC §5.3). Mirrors vanavro/tests/fixtures/idl/named_unions.avdl.
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub struct Catalogue {
+        #[serde(rename = "primaryKey")]
+        pub primary_key: CatalogueUnion,
+        pub nickname: Option<String>,
+        pub single: Single,
+        pub many: Many,
+        pub tags: Vec<Tag>,
+        pub scores: ::std::collections::HashMap<String, Score>,
+        #[serde(rename = "optionalScores")]
+        pub optional_scores: Option<::std::collections::HashMap<String, Weight>>,
+        #[serde(rename = "variantArray")]
+        pub variant_array: Option<Vec<Kind>>,
+        pub alpha: Alpha,
+        pub beta: Beta,
+    }
+
+    impl Catalogue {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_named_0unions_1Catalogue(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Catalogue {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_named_0unions_1Catalogue(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("named_unions.Catalogue")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: Some(
+                "Every `enum` union-naming shape in one record (SPEC §5.3). Mirrors vanavro/tests/fixtures/idl/named_unions.avdl."
+                    .to_string(),
+            ),
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "primaryKey".to_string(), doc
+                : None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::String,
+                ::apache_avro::Schema::Long])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "nickname".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::String])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "single".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::String])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "many".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::String, ::apache_avro::Schema::Boolean,
+                ::apache_avro::Schema::Bytes])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "tags".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema { items :
+                Box::new(::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::String, ::apache_avro::Schema::Long])
+                .expect("vanavro: structurally constructed union is valid"))), attributes
+                : ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "scores".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Map(::apache_avro::schema::MapSchema { types :
+                Box::new(::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::Double])
+                .expect("vanavro: structurally constructed union is valid"))), attributes
+                : ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "optionalScores".to_string(),
+                doc : None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::Map(::apache_avro::schema::MapSchema { types :
+                Box::new(::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::Double])
+                .expect("vanavro: structurally constructed union is valid"))), attributes
+                : ::std::collections::BTreeMap::new(), })])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "variantArray".to_string(),
+                doc : None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema { items :
+                Box::new(::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::String])
+                .expect("vanavro: structurally constructed union is valid"))), attributes
+                : ::std::collections::BTreeMap::new(), })])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "alpha".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::String,
+                ::apache_avro::Schema::Long])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "beta".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Int,
+                ::apache_avro::Schema::Double])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("primaryKey".to_string(), 0),
+                ("nickname".to_string(), 1),
+                ("single".to_string(), 2),
+                ("many".to_string(), 3),
+                ("tags".to_string(), 4),
+                ("scores".to_string(), 5),
+                ("optionalScores".to_string(), 6),
+                ("variantArray".to_string(), 7),
+                ("alpha".to_string(), 8),
+                ("beta".to_string(), 9),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}

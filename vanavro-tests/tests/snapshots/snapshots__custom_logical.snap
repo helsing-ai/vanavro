@@ -1,0 +1,387 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod custom_logical {
+    pub(super) fn default_custom_logical_homepage() -> ::url::Url {
+        ::serde_json::from_str::<::url::Url>("\"https://example.com/\"")
+            .expect(
+                "invalid default `\"https://example.com/\"` for field `CustomLogical.homepage`",
+            )
+    }
+
+    pub(super) fn default_custom_logical_contact() -> crate::Email {
+        ::serde_json::from_str::<
+            ::serde_with::de::DeserializeAsWrap<crate::Email, crate::EmailAsString>,
+        >("\"hi@example.com\"")
+            .expect(
+                "invalid default `\"hi@example.com\"` for field `CustomLogical.contact`",
+            )
+            .into_inner()
+    }
+    #[::serde_with::serde_as]
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub enum CustomLogicalUnion {
+        #[serde(rename = "null")]
+        Null(()),
+        #[serde(rename = "string")]
+        String(#[serde_as(as = "crate::EmailAsString")] crate::Email),
+        #[serde(rename = "custom_logical.Money")]
+        Money(crate::Money),
+        #[serde(rename = "custom_logical.Cents")]
+        Cents(#[serde_as(as = "crate::CentsAsRecord")] crate::Cents),
+        #[serde(rename = "int")]
+        Int(i32),
+    }
+
+    impl CustomLogicalUnion {
+        /// Statically constructed Avro schema for this union.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                let defined = &mut ::std::collections::HashSet::<
+                    ::apache_avro::schema::Name,
+                >::new();
+                ::apache_avro::Schema::Union(
+                    ::apache_avro::schema::UnionSchema::new(
+                            vec![
+                                ::apache_avro::Schema::Null, ::apache_avro::Schema::String,
+                                build_custom_0logical_1Money(defined),
+                                build_custom_0logical_1Cents(defined),
+                                ::apache_avro::Schema::Int
+                            ],
+                        )
+                        .expect("vanavro: structurally constructed union is valid"),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under digest `D`.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for CustomLogicalUnion {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+    #[::serde_with::serde_as]
+    #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+    pub struct CustomLogical {
+        #[serde(default = "default_custom_logical_homepage")]
+        pub homepage: ::url::Url,
+        #[serde_as(as = "crate::EmailAsString")]
+        #[serde(default = "default_custom_logical_contact")]
+        pub contact: crate::Email,
+        pub mirrors: Vec<::url::Url>,
+        #[serde(default)]
+        pub fallback: Option<::url::Url>,
+        pub price: crate::Money,
+        pub channel: CustomLogicalUnion,
+    }
+
+    impl CustomLogical {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                build_custom_0logical_1CustomLogical(
+                    &mut ::std::collections::HashSet::new(),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for CustomLogical {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, ::serde::Deserialize)]
+    #[serde(try_from = "NotificationRepr")]
+    pub enum Notification {
+        Null(()),
+        String(crate::Email),
+        Money(crate::Money),
+        Cents(crate::Cents),
+        Int(i32),
+    }
+
+    impl ::serde::Serialize for Notification {
+        fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+        where
+            S: ::serde::Serializer,
+        {
+            use ::serde::ser::SerializeStruct as _;
+            struct Arm<'a>(&'a Notification);
+            impl ::serde::Serialize for Arm<'_> {
+                fn serialize<S>(
+                    &self,
+                    serializer: S,
+                ) -> ::std::result::Result<S::Ok, S::Error>
+                where
+                    S: ::serde::Serializer,
+                {
+                    match self.0 {
+                        Notification::Null(()) => {
+                            serializer
+                                .serialize_newtype_variant(
+                                    "Notification",
+                                    0u32,
+                                    "null",
+                                    &(),
+                                )
+                        }
+                        Notification::String(val) => {
+                            serializer
+                                .serialize_newtype_variant(
+                                    "Notification",
+                                    1u32,
+                                    "string",
+                                    &::serde_with::ser::SerializeAsWrap::<
+                                        crate::Email,
+                                        crate::EmailAsString,
+                                    >::new(val),
+                                )
+                        }
+                        Notification::Money(val) => {
+                            serializer
+                                .serialize_newtype_variant(
+                                    "Notification",
+                                    2u32,
+                                    "custom_logical.Money",
+                                    val,
+                                )
+                        }
+                        Notification::Cents(val) => {
+                            serializer
+                                .serialize_newtype_variant(
+                                    "Notification",
+                                    3u32,
+                                    "custom_logical.Cents",
+                                    &::serde_with::ser::SerializeAsWrap::<
+                                        crate::Cents,
+                                        crate::CentsAsRecord,
+                                    >::new(val),
+                                )
+                        }
+                        Notification::Int(val) => {
+                            serializer
+                                .serialize_newtype_variant("Notification", 4u32, "int", val)
+                        }
+                    }
+                }
+            }
+            let mut st = serializer.serialize_struct("Notification", 1)?;
+            st.serialize_field("via", &Arm(self))?;
+            st.end()
+        }
+    }
+
+    impl Notification {
+        /// Statically constructed Avro schema for this type.
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            {
+                build_custom_0logical_1Notification(
+                    &mut ::std::collections::HashSet::new(),
+                )
+            });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`).
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Notification {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(::serde::Deserialize)]
+    #[serde(rename = "Notification")]
+    struct NotificationRepr {
+        via: NotificationReprUnion,
+    }
+    #[::serde_with::serde_as]
+    #[derive(::serde::Deserialize)]
+    enum NotificationReprUnion {
+        #[serde(rename = "null")]
+        Null(()),
+        #[serde(rename = "string")]
+        String(#[serde_as(as = "crate::EmailAsString")] crate::Email),
+        #[serde(rename = "custom_logical.Money")]
+        Money(crate::Money),
+        #[serde(rename = "custom_logical.Cents")]
+        Cents(#[serde_as(as = "crate::CentsAsRecord")] crate::Cents),
+        #[serde(rename = "int")]
+        Int(i32),
+    }
+
+    impl ::std::convert::From<NotificationRepr> for Notification {
+        fn from(repr: NotificationRepr) -> Self {
+            match repr.via {
+                NotificationReprUnion::Null(()) => Self::Null(()),
+                NotificationReprUnion::String(val) => Self::String(val),
+                NotificationReprUnion::Money(val) => Self::Money(val),
+                NotificationReprUnion::Cents(val) => Self::Cents(val),
+                NotificationReprUnion::Int(val) => Self::Int(val),
+            }
+        }
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_custom_0logical_1Cents(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("custom_logical.Cents")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "value".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Long, custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("value".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_custom_0logical_1CustomLogical(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("custom_logical.CustomLogical")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "homepage".to_string(), doc :
+                None, aliases : vec![], default :
+                Some(::serde_json::Value::String("https://example.com/".to_string())),
+                schema : ::apache_avro::Schema::String, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "contact".to_string(), doc :
+                None, aliases : vec![], default :
+                Some(::serde_json::Value::String("hi@example.com".to_string())), schema :
+                ::apache_avro::Schema::String, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "mirrors".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Array(::apache_avro::schema::ArraySchema { items :
+                Box::new(::apache_avro::Schema::String), attributes :
+                ::std::collections::BTreeMap::new(), }), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "fallback".to_string(), doc :
+                None, aliases : vec![], default : Some(::serde_json::Value::Null), schema
+                :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::String])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "price".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                build_custom_0logical_1Money(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "channel".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::String, build_custom_0logical_1Money(defined),
+                build_custom_0logical_1Cents(defined), ::apache_avro::Schema::Int])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("homepage".to_string(), 0),
+                ("contact".to_string(), 1),
+                ("mirrors".to_string(), 2),
+                ("fallback".to_string(), 3),
+                ("price".to_string(), 4),
+                ("channel".to_string(), 5),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_custom_0logical_1Money(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("custom_logical.Money")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "amount".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Long, custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "currency".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::String, custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("amount".to_string(), 0),
+                ("currency".to_string(), 1),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_custom_0logical_1Notification(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("custom_logical.Notification")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: None,
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "via".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                ::apache_avro::Schema::Union(::apache_avro::schema::UnionSchema::new(vec![::apache_avro::Schema::Null,
+                ::apache_avro::Schema::String, build_custom_0logical_1Money(defined),
+                build_custom_0logical_1Cents(defined), ::apache_avro::Schema::Int])
+                .expect("vanavro: structurally constructed union is valid")),
+                custom_attributes : ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([("via".to_string(), 0)]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}
