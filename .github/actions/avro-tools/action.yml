@@ -1,0 +1,48 @@
+# Installs a JRE and the Apache `avro-tools` CLI and puts an `avro-tools` wrapper on PATH. The Java
+# interop and cross-language fingerprint tests skip their live `avro-tools` steps when the tool is
+# missing, so every job that runs the test suite must use this action to exercise them.
+#
+# The jar comes straight from Maven Central rather than a package manager: Debian/Ubuntu's
+# `avro-java` packages ship only libraries (no `avro-tools` jar or CLI) and are stuck at 1.8.2,
+# which predates `fingerprint --fingerprint CRC-64-AVRO` (SPEC §14.3). Homebrew or Nix would add a
+# heavy toolchain to every job; a pinned, checksum-verified download keeps the version exact.
+name: avro-tools
+description: Install a JRE and Apache avro-tools on PATH
+inputs:
+  version:
+    description: avro-tools version (Maven Central)
+    default: "1.12.0"
+  sha256:
+    description: SHA-256 of avro-tools-<version>.jar
+    default: f8e4d0d945852dc2f91c3bf88f7dcb8cabc00e0fc295bb92e893e54945e08085
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # tag=v5.7.0
+      with:
+        distribution: temurin
+        java-version: "21"
+    - name: Install avro-tools ${{ inputs.version }}
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        SHA256: ${{ inputs.sha256 }}
+      run: |
+        set -euo pipefail
+        dir="$RUNNER_TEMP/avro-tools"
+        mkdir -p "$dir/bin"
+        jar="$dir/avro-tools-$VERSION.jar"
+        curl -fsSL --retry 3 -o "$jar" \
+          "https://repo1.maven.org/maven2/org/apache/avro/avro-tools/$VERSION/avro-tools-$VERSION.jar"
+        echo "$SHA256  $jar" | shasum -a 256 -c -
+        printf '#!/usr/bin/env bash\nexec java -jar "%s" "$@"\n' "$jar" > "$dir/bin/avro-tools"
+        chmod +x "$dir/bin/avro-tools"
+        echo "$dir/bin" >> "$GITHUB_PATH"
+    - name: Verify avro-tools
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      # `avro-tools` with no arguments prints its version to stderr and exits non-zero.
+      run: |
+        out=$(avro-tools 2>&1 || true)
+        grep -q "Version $VERSION" <<<"$out" || { echo "$out" >&2; exit 1; }
