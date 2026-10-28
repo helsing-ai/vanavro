@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "Aliased",
+  "namespace": "aliases",
+  "aliases": ["aliases.LegacyAliased", "other.RenamedRecord"],
+  "fields": [
+    {"name": "color", "aliases": ["hue", "shade"], "type": {
+      "type": "enum", "name": "Color", "aliases": ["aliases.LegacyColor"],
+      "symbols": ["RED", "GREEN", "BLUE"]
+    }},
+    {"name": "tag", "type": {
+      "type": "fixed", "name": "Tag", "aliases": ["aliases.LegacyTag"], "size": 4
+    }}
+  ]
+}

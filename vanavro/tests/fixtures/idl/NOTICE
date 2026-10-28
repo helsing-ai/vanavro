@@ -1,0 +1,13 @@
+The `.avdl`, `.avsc`, and `.avpr` files in this directory (with the exception of
+`import_local.avdl`, which is a trimmed local variant, and `named_unions.avdl`,
+which is vanavro's own) are copied verbatim from the Apache Avro test corpus:
+
+  https://github.com/apache/avro
+  lang/java/idl/src/test/idl/
+  lang/java/idl/src/test/idl/input/
+
+They are distributed under the Apache License, Version 2.0:
+
+  https://www.apache.org/licenses/LICENSE-2.0
+
+Copyright Apache Software Foundation.

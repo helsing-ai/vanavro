@@ -1,0 +1,8 @@
+{
+  "type": "record",
+  "name": "Tree",
+  "namespace": "tree",
+  "fields": [
+    {"name": "node", "type": ["null", "int", "tree.Tree"]}
+  ]
+}

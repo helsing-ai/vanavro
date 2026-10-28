@@ -1,0 +1,42 @@
+//
+// Every union-naming shape of SPEC §5.3 in one record. `@enum` is legal on the
+// record field only, which in IDL is the post-type annotation
+// `<type> @enum("Name") fieldName;` — written before a type it would bind to
+// the type and be discarded.
+
+@namespace("named_unions")
+protocol NamedUnions {
+
+  record Catalogue {
+
+    // (1) field-root union, unnamed -> `CatalogueUnion` (one unnamed per record).
+    union { string, long } primaryKey;
+
+    // (2) optional union -> Option, no enum generated.
+    union { null, string } nickname;
+
+    // (3) single-variant union, named on the field -> single: Single.
+    union { string } @enum("Single") single;
+
+    // (4) 3+ variant union, named on the field -> many: Many.
+    union { int, string, boolean, bytes } @enum("Many") many;
+
+    // (5) union in an array; the field's name propagates inward -> Vec<Tag>.
+    array<union { null, string, long }> @enum("Tag") tags;
+
+    // (6) union in a map; likewise -> HashMap<String, Score>.
+    map<union { int, double }> @enum("Score") scores;
+
+    // (7) optional collection (no `?` shorthand on array/map): the field's name
+    //     propagates through the transparent `[null, T]` wrapper into the map's
+    //     values -> Option<HashMap<String, Weight>>.
+    union { null, map<union { int, double }> } @enum("Weight") optionalScores;
+
+    // (8) same, through an array -> Option<Vec<Kind>>.
+    union { null, array<union { int, string }> } @enum("Kind") variantArray;
+
+    // (9)/(10) two named bare-union fields -> alpha: Alpha, beta: Beta.
+    union { string, long } @enum("Alpha") alpha;
+    union { int, double }  @enum("Beta")  beta;
+  }
+}

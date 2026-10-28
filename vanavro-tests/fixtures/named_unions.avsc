@@ -1,0 +1,56 @@
+{
+  "type": "record",
+  "name": "Catalogue",
+  "namespace": "named_unions",
+  "doc": "Every `enum` union-naming shape in one record (SPEC §5.3). Mirrors vanavro/tests/fixtures/idl/named_unions.avdl.",
+  "fields": [
+    {
+      "name": "primaryKey",
+      "type": ["string", "long"]
+    },
+    {
+      "name": "nickname",
+      "type": ["null", "string"]
+    },
+    {
+      "name": "single",
+      "enum": "Single",
+      "type": ["string"]
+    },
+    {
+      "name": "many",
+      "enum": "Many",
+      "type": ["int", "string", "boolean", "bytes"]
+    },
+    {
+      "name": "tags",
+      "enum": "Tag",
+      "type": {"type": "array", "items": ["null", "string", "long"]}
+    },
+    {
+      "name": "scores",
+      "enum": "Score",
+      "type": {"type": "map", "values": ["int", "double"]}
+    },
+    {
+      "name": "optionalScores",
+      "enum": "Weight",
+      "type": ["null", {"type": "map", "values": ["int", "double"]}]
+    },
+    {
+      "name": "variantArray",
+      "enum": "Kind",
+      "type": ["null", {"type": "array", "items": ["int", "string"]}]
+    },
+    {
+      "name": "alpha",
+      "enum": "Alpha",
+      "type": ["string", "long"]
+    },
+    {
+      "name": "beta",
+      "enum": "Beta",
+      "type": ["int", "double"]
+    }
+  ]
+}

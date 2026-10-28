@@ -1,0 +1,40 @@
+[package]
+name = "vanavro-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "vanavro_tests"
+path = "src/lib.rs"
+
+# Runtime crates the generated code references (SPEC §13.2). The corpus
+# exercises `apache_avro`, `serde`, `serde_json` (any field with a `default`,
+# embedded in `schema()` as `serde_json::Value` literals), `uuid` (logical
+# `uuid`) and `digest` (`fingerprint()`); they must be regular deps so the
+# `include!`d modules in `src/lib.rs` can resolve them.
+[dependencies]
+apache-avro.workspace = true
+digest = "0.11"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# `serde` for the logical-`uuid` field; the `uuid!` macro used in tests needs no
+# extra feature.
+uuid = { version = "1", features = ["serde"] }
+# Custom logical types (SPEC §15): `url` is the converterless `rust_type` for the
+# `url` logical type; `serde_with` backs the `email` converter and is referenced
+# by the generated `#[serde_as]` glue.
+url = { version = "2", features = ["serde"] }
+serde_with = "3"
+
+[build-dependencies]
+# The corpus is `.avsc`-only and generated from `build.rs`, so neither the `cli`
+# nor the `idl` feature is needed.
+vanavro = { path = "../vanavro", default-features = false }
+
+[dev-dependencies]
+insta = "1"
+rstest = "0.27"
+vanavro = { path = "../vanavro", default-features = false }

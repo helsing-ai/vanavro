@@ -1,0 +1,8 @@
+{
+  "type": "record",
+  "name": "Scalar",
+  "namespace": "scalar",
+  "fields": [
+    {"name": "choice", "type": ["int", "string", "boolean", "null"]}
+  ]
+}

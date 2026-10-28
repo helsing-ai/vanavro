@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "Nested",
+  "namespace": "nested",
+  "fields": [
+    {"name": "color", "type": {"type": "enum", "name": "Color", "symbols": ["RED", "GREEN", "BLUE"]}},
+    {"name": "tag", "type": {"type": "fixed", "name": "Tag", "size": 4}},
+    {"name": "inline", "type": {
+      "type": "record", "name": "Inline",
+      "fields": [{"name": "v", "type": "int"}]
+    }},
+    {"name": "inlines", "type": {"type": "array", "items": {
+      "type": "record", "name": "Elem",
+      "fields": [{"name": "w", "type": "long"}]
+    }}}
+  ]
+}

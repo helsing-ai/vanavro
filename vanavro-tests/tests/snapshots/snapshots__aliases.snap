@@ -1,0 +1,181 @@
+---
+source: vanavro-tests/tests/snapshots.rs
+expression: generated
+---
+pub mod aliases {
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Hash,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    pub struct Aliased {
+        #[serde(alias = "hue")]
+        #[serde(alias = "shade")]
+        pub color: Color,
+        #[serde(with = "::apache_avro::serde::fixed")]
+        pub tag: Tag,
+    }
+
+    impl Aliased {
+        /// Statically constructed Avro schema for this type (SPEC §12).
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_aliases_1Aliased(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`) — SPEC §12.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Aliased {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    #[derive(
+        Debug,
+        Clone,
+        Copy,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::serde::Serialize,
+        ::serde::Deserialize,
+    )]
+    #[non_exhaustive]
+    pub enum Color {
+        #[serde(rename = "RED")]
+        Red,
+        #[serde(rename = "GREEN")]
+        Green,
+        #[serde(rename = "BLUE")]
+        Blue,
+    }
+
+    impl Color {
+        /// Statically constructed Avro schema for this type (SPEC §12).
+        pub fn schema() -> &'static ::apache_avro::Schema {
+            static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+            { build_aliases_1Color(&mut ::std::collections::HashSet::new()) });
+            &SCHEMA
+        }
+
+        /// Fingerprint of [`Self::schema`] under the supplied digest
+        /// (e.g. `::apache_avro::rabin::Rabin`) — SPEC §12.
+        pub fn fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+            Self::schema().fingerprint::<D>()
+        }
+    }
+
+    impl ::apache_avro::AvroSchema for Color {
+        fn get_schema() -> ::apache_avro::Schema {
+            Self::schema().clone()
+        }
+    }
+
+    pub type Tag = [u8; 4];
+    /// Statically constructed Avro schema for [`Tag`] (SPEC §12).
+    pub fn tag_schema() -> &'static ::apache_avro::Schema {
+        static SCHEMA: ::std::sync::LazyLock<::apache_avro::Schema> = ::std::sync::LazyLock::new(||
+        { build_aliases_1Tag(&mut ::std::collections::HashSet::new()) });
+        &SCHEMA
+    }
+
+    /// Fingerprint of [`tag_schema`] under digest `D` (SPEC §12).
+    pub fn tag_fingerprint<D: ::digest::Digest>() -> ::apache_avro::schema::SchemaFingerprint {
+        tag_schema().fingerprint::<D>()
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_aliases_1Aliased(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("aliases.Aliased")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Record(::apache_avro::schema::RecordSchema {
+            name,
+            aliases: Some(
+                vec![
+                    ::apache_avro::schema::Alias::new("aliases.LegacyAliased")
+                    .expect("vanavro: structurally valid alias"),
+                    ::apache_avro::schema::Alias::new("other.RenamedRecord")
+                    .expect("vanavro: structurally valid alias")
+                ],
+            ),
+            doc: None,
+            fields: vec![
+                ::apache_avro::schema::RecordField { name : "color".to_string(), doc :
+                None, aliases : vec!["hue".to_string(), "shade".to_string()], default :
+                None, schema : build_aliases_1Color(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), },
+                ::apache_avro::schema::RecordField { name : "tag".to_string(), doc :
+                None, aliases : vec![], default : None, schema :
+                build_aliases_1Tag(defined), custom_attributes :
+                ::std::collections::BTreeMap::new(), }
+            ],
+            lookup: ::std::collections::BTreeMap::from([
+                ("color".to_string(), 0),
+                ("tag".to_string(), 1),
+            ]),
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_aliases_1Color(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("aliases.Color")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Enum(::apache_avro::schema::EnumSchema {
+            name,
+            aliases: Some(
+                vec![
+                    ::apache_avro::schema::Alias::new("aliases.LegacyColor")
+                    .expect("vanavro: structurally valid alias")
+                ],
+            ),
+            doc: None,
+            symbols: vec!["RED".to_string(), "GREEN".to_string(), "BLUE".to_string()],
+            default: None,
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+    #[allow(dead_code, non_snake_case)]
+    pub(crate) fn build_aliases_1Tag(
+        defined: &mut ::std::collections::HashSet<::apache_avro::schema::Name>,
+    ) -> ::apache_avro::Schema {
+        let name = ::apache_avro::schema::Name::new("aliases.Tag")
+            .expect("vanavro: structurally valid schema name");
+        if !defined.insert(name.clone()) {
+            return ::apache_avro::Schema::Ref { name };
+        }
+        ::apache_avro::Schema::Fixed(::apache_avro::schema::FixedSchema {
+            name,
+            aliases: Some(
+                vec![
+                    ::apache_avro::schema::Alias::new("aliases.LegacyTag")
+                    .expect("vanavro: structurally valid alias")
+                ],
+            ),
+            doc: None,
+            size: 4,
+            attributes: ::std::collections::BTreeMap::new(),
+        })
+    }
+}
