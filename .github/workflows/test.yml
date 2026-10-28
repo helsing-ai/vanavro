@@ -29,6 +29,8 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # tag=v6.0.2
         with:
           submodules: true
+      - name: Install avro-tools
+        uses: ./.github/actions/avro-tools
       - name: Install ${{ matrix.toolchain }}
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
         with:
@@ -58,6 +60,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # tag=v6.0.2
         with:
           submodules: true
+      - name: Install avro-tools
+        # `Command::new("avro-tools")` only resolves `avro-tools.exe` on Windows, so the bash
+        # wrapper this action installs would not be found there.
+        if: runner.os != 'Windows'
+        uses: ./.github/actions/avro-tools
       - name: Install stable
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
         with:
