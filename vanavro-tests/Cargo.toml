@@ -36,5 +36,5 @@ vanavro = { path = "../vanavro", default-features = false }
 
 [dev-dependencies]
 insta = "1"
-rstest = "0.27"
+rstest = "0.28"
 vanavro = { path = "../vanavro", default-features = false }
