@@ -32,7 +32,7 @@ jobs:
       - name: Install avro-tools
         uses: ./.github/actions/avro-tools
       - name: Install ${{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # branch=master
         with:
           toolchain: ${{ matrix.toolchain }}
       - name: cargo generate-lockfile
@@ -66,7 +66,7 @@ jobs:
         if: runner.os != 'Windows'
         uses: ./.github/actions/avro-tools
       - name: Install stable
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # branch=master
         with:
           toolchain: stable
       - name: cargo generate-lockfile
@@ -102,12 +102,12 @@ jobs:
       - name: Install avro-tools
         uses: ./.github/actions/avro-tools
       - name: Install stable
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # branch=master
         with:
           toolchain: stable
           components: llvm-tools-preview
       - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@065d6a08a14e61e89fb0a4c10eecdbdef39c7d8e # tag=v2.85.4
+        uses: taiki-e/install-action@86f7a0ffb25f40114606501a311ebcfaf882ea32 # tag=v2.88.0
         with:
           tool: cargo-llvm-cov
       - name: cargo generate-lockfile
