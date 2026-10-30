@@ -31,13 +31,14 @@ The CLI tool uses `clap` to process input schemas and protocols. Its current arg
 | :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--schemas <FILE...>`                | Input Avro schema files (`.avsc` JSON format). Can accept multiple files. Grouped with `--idl` as mutually exclusive.                                                                                                                                              |
 | `--idl <FILE>`                       | Input Avro IDL file (`.avdl` format). Mutually exclusive with `--schemas`.                                                                                                                                                                                         |
-| `-o`, `--output <FILE>`              | Output file path (defaults to writing to `stdout` if not specified).                                                                                                                                                                                               |
+| `-o`, `--output <FILE>`              | Output file path (defaults to writing to `stdout` if not specified). Written as a single file unless `--split` is given.                                                                                                                                            |
+| `--split`                            | Split `--output` into one file per namespace module (**Section 8.3**). Requires `--output`; stdout output is always a single file.                                                                                                                                 |
 | `--builder`                          | Derive `bon::Builder` for generated record types to enable ergonomic construction.                                                                                                                                                                                 |
 | `--no-non-exhaustive`                | Disable adding `#[non_exhaustive]` to generated enums. (By default, enums should be generated with `#[non_exhaustive]` to allow backward-compatible changes).                                                                                                      |
 | `--no-collapse-single-union`         | Disable the single-union-record collapse of **Section 5.6**. (By default such records collapse to a bare enum; this keeps them as a struct with a sibling `{Record}Union` enum).                                                                                   |
 | `--allow-unregistered-logical-types` | Tolerate a `logicalType` that matches no standard logical type and no registered custom mapping: ignore the annotation and lower the field to its base type instead of raising `UnknownLogicalType` (**Section 15.6**). By default such an annotation is an error. |
 
-The legacy `--split-schemas` flag is deliberately **not** provided: its `include_str!`-based implementation is broken (see **Section 4.2**) and output is always a single file.
+The legacy `--split-schemas` flag is deliberately **not** provided: its `include_str!`-based implementation is broken (see **Section 4.2**). The split output of **Section 8.3** is unrelated: it partitions the generated *Rust* source along module boundaries and embeds no `.avsc` files.
 
 ### 2.2. Builder Interface
 
@@ -66,17 +67,19 @@ impl<S: van_avro_builder::IsComplete> VanAvroBuilder<S> {
     pub fn build(self) -> VanAvro;
     pub fn generate(self) -> Result<String, GeneratorError>;
     pub fn generate_to_writer<W: Write>(self, writer: &mut W) -> Result<(), GeneratorError>;
-    pub fn generate_to_path(self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
+    pub fn generate_to_path(self, path: impl AsRef<Path>, split: bool) -> Result<(), GeneratorError>;
 }
 
 impl VanAvro {
     pub fn generate(&self) -> Result<String, GeneratorError>;
     pub fn generate_to_writer<W: Write>(&self, writer: &mut W) -> Result<(), GeneratorError>;
-    pub fn generate_to_path(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
+    pub fn generate_to_path(&self, path: impl AsRef<Path>, split: bool) -> Result<(), GeneratorError>;
 }
 ```
 
 See **Section 15** for the custom-logical-type registration semantics.
+
+Splitting is an argument of `generate_to_path` rather than a builder option, because it only has meaning for a filesystem destination: `generate` and `generate_to_writer` produce a single stream and have nowhere to put module files. See **Section 8.3** for the layout.
 
 The legacy `register_logical_type` and `register_logical_type_with` convenience methods are not part of the current builder API. Register mappings with `.with_logical_type(CustomLogicalType::builder(...).build())` instead; compatibility wrappers for earlier API drafts are not required before `1.0`.
 
@@ -461,6 +464,7 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 | `InvalidRustType { logical_type: String, detail: String }`                 | A registered custom logical type (§15) supplied a `rust_type` / `converter` / `builder_with` that does not parse as a Rust type / path / token stream. `logical_type` is the `logicalType` name, or the record's fully-qualified name for a record-level mapping. |
 | `ForceEqHashOnMap { logical_type: String, field: String, record: String }` | A `force_eq_hash` mapping (§15) is used in a map-value position, where the `HashMap` field can never be `Hash` (§11.1).                                                                  |
 | `NameCollision { kind, scope, rust_ident, first, second }`                 | Two distinct Avro names fold onto the same Rust identifier after case conversion / keyword escaping.                                                                                     |
+| `InvalidOutputPath { path: PathBuf, detail: String }`                      | `generate_to_path` was asked to split (§8.3) into a path with no file extension (its module directory would be the path itself) or a non-UTF-8 file stem (unusable in a `#[path]` attribute). Raised before anything is written. |
 | `Codegen(syn::Error)`                                                      | Reserved for an internal invariant violation while emitting `TokenStream`. Currently never constructed.                                                                                  |
 | `Format(syn::Error)`                                                       | `syn::parse2` failed to parse the generated tokens into a `syn::File` before `prettyplease` formatting (bug).                                                                            |
 
@@ -469,6 +473,19 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 - CLI renders errors with `miette`'s graphical handler; library users receive structured `GeneratorError` directly.
 - Source spans are **not** surfaced through `miette::Diagnostic`: `GeneratorError` carries no `#[diagnostic]` labels. The `avdl` diagnostic (source span, label, help) is pre-rendered to text inside `IdlParse::inner`; `apache-avro` errors carry no spans.
 - `generate_to_path` must write to a sibling temp file and atomically rename on success — never leave a partial output on failure.
+  - With `split` (§8.3), each file is written atomically this way, and nothing is written at all if generation or path validation fails. The set of files as a whole is **not** atomic: an I/O failure midway can leave some module files updated and others not. Module files are written before the root, so the root never declares a module whose file has not been written in this run.
+
+### 8.3. Split Output
+
+`generate_to_path(path, split = true)` (CLI: `--split`, which requires `--output`) partitions the generated source along the namespace module tree of §6.1, so large outputs are reviewable file by file:
+
+- `path` holds the root module: the root-namespace items, and a declaration for each top-level namespace module.
+- Every `pub mod x { … }` is moved into its own file and replaced in its parent by `#[path = "<dir>/x.rs"] pub mod x;`, recursively. For `out/gen.rs` the files are `out/gen/com.rs`, `out/gen/com/example.rs`, …, i.e. a directory named after `path`'s file stem holds the tree.
+- The `#[path]` attribute is **required**, not cosmetic. The output is meant to be `include!`d (§11.6), and a bare `mod x;` inside an `include!`d file resolves against the directory of the *including* source file (as `include_str!` does, §4.2), so it would not compile. A `#[path]` on an out-of-line module declared in a non-`mod.rs` file resolves relative to that file's own directory, so the root file declares `#[path = "gen/com.rs"]` and `gen/com.rs` declares `#[path = "com/example.rs"]`. This also makes the tree usable directly as a source module (`mod gen;` beside `gen.rs`).
+- File names are the module idents with any `r#` prefix removed (`pub mod r#type;` lives in `type.rs`). Module idents are snake_case and unique per parent (§5.2), so file names cannot collide.
+- Splitting is a pure partition: re-inlining every module file reproduces the single-file output's items in the same order. No item, path, or visibility changes, so cross-module references (§6.2) and the `pub(crate)` builders (§12.1) work identically. Each file is formatted like the single-file output (§11.6, §11.7).
+- `path` must have a file extension, and its stem must be valid UTF-8; otherwise `InvalidOutputPath` (§8.1) is raised.
+- Module files from an earlier run whose namespace no longer exists are **not** deleted: they are unreferenced by the new root and do not affect compilation. vanavro never deletes files it did not just write.
 
 ---
 
@@ -972,7 +989,7 @@ VanAvro::builder()
             .converter("crate::serde_wgs84::Wgs84")
             .build(),
     )
-    .generate_to_path(out_dir.join("generated.rs"))?;
+    .generate_to_path(out_dir.join("generated.rs"), true)?;
 ```
 
 The generated `geo::Route` carries `#[serde_as]`, its `waypoints` field is `Vec<::sguaba::systems::Wgs84>` with `#[serde_as(as = "Vec<crate::serde_wgs84::Wgs84>")]`, no `Wgs84Coordinate` struct is emitted, and `Route::schema()` still embeds the original `wgs84`-annotated record. Because `--builder` is active, `example::UserProfile.website` (type `::url::Url`) additionally carries `#[builder(with = |s: &str| ::url::Url::parse(s))]`, so callers construct it with `UserProfile::builder().website("https://…")?`.

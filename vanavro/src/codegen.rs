@@ -199,14 +199,27 @@ impl LogicalCtx<'_> {
     }
 }
 
-/// Walk the resolved schemas and return formatted Rust source ready to write
-/// or include into a downstream crate.
+/// Walk the resolved schemas and return formatted single-file Rust source. The
+/// unit tests' entry point; the public API goes through [`generate_file`].
+#[cfg(test)]
 pub(crate) fn generate(
     schemas: &[Schema],
     raw_names: &RawNameTable,
     logical_types: &LogicalTypeRegistry,
     opts: CodegenOptions,
 ) -> Result<String, GeneratorError> {
+    let file = generate_file(schemas, raw_names, logical_types, opts)?;
+    Ok(format_file(&file))
+}
+
+/// Walk the resolved schemas and return the generated output as a single
+/// unformatted `syn::File`, namespace modules inline.
+pub(crate) fn generate_file(
+    schemas: &[Schema],
+    raw_names: &RawNameTable,
+    logical_types: &LogicalTypeRegistry,
+    opts: CodegenOptions,
+) -> Result<syn::File, GeneratorError> {
     // Flatten top-level schemas plus every *inline* named type (anonymous
     // records / enums / fixed declared inside a field, array, map, union, …)
     // into one list of named definitions. Without this, a field typed by an
@@ -296,11 +309,12 @@ pub(crate) fn generate(
     // No module-level `#![allow(...)]` is emitted: the output is meant to be
     // `include!`d, and the including module applies whatever lint attributes
     // it needs at its own site.
-    let file: syn::File = syn::parse2(body).map_err(GeneratorError::Format)?;
-    let body_source = prettyplease::unparse(&file);
-    let body_source = space_sibling_items(&body_source);
+    syn::parse2(body).map_err(GeneratorError::Format)
+}
 
-    Ok(body_source)
+/// Pretty-print a generated file with blank lines between sibling items.
+pub(crate) fn format_file(file: &syn::File) -> String {
+    space_sibling_items(&prettyplease::unparse(file))
 }
 
 /// `prettyplease` packs sibling items with no blank lines (e.g. a `struct`
@@ -321,10 +335,11 @@ fn space_sibling_items(src: &str) -> String {
     for (i, &line) in lines.iter().enumerate() {
         if i > 0 {
             let prev = lines[i - 1];
-            if starts_new_item(line)
-                && prev.trim() == "}"
-                && indent_width(line) == indent_width(prev)
-            {
+            // A split output's `pub mod x;` declarations (SPEC §8.3) end an
+            // item just like a closing brace does.
+            let ends_item = prev.trim() == "}"
+                || (prev.trim_start().starts_with("pub mod ") && prev.ends_with(';'));
+            if starts_new_item(line) && ends_item && indent_width(line) == indent_width(prev) {
                 out.push(String::new());
             }
         }
@@ -358,6 +373,7 @@ fn starts_new_item(line: &str) -> bool {
         || t.starts_with("#[non_exhaustive")
         || t.starts_with("#[serde")
         || t.starts_with("#[doc")
+        || t.starts_with("#[path")
         || t.starts_with("///")
 }
 

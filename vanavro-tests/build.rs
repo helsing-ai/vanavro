@@ -3,6 +3,12 @@
 // Each fixture is emitted to `OUT_DIR/<stem>.rs` and pulled into the crate by
 // `src/lib.rs` via `include!`, mirroring the canonical `build.rs` integration
 // pattern from SPEC §4.2 (generate into `OUT_DIR`, `include!` from source).
+// Generation uses the split layout (SPEC §8.3), so each namespace
+// module lands in `OUT_DIR/<stem>/…` and compiling this crate proves the
+// `#[path]` wiring survives `include!`. The generated source carries no module
+// prelude (no banner, no inner `#![allow(...)]`), so it can be `include!`d
+// mid-file at the crate root; the crate-level lint allowances live in
+// `src/lib.rs` instead.
 
 use std::path::PathBuf;
 
@@ -18,11 +24,10 @@ fn main() {
         println!("cargo::rerun-if-changed={}", src.display());
         let json =
             std::fs::read_to_string(&src).unwrap_or_else(|e| panic!("read {}: {e}", src.display()));
-        let generated = VanAvro::builder()
+        VanAvro::builder()
             .schema_json(json)
-            .generate()
+            .generate_to_path(out_dir.join(format!("{stem}.rs")), true)
             .unwrap_or_else(|e| panic!("codegen {stem}: {e}"));
-        write_module(&out_dir, stem, &generated);
     }
 
     // The custom-logical fixture (SPEC §15) needs registered mappings, so it is
@@ -33,7 +38,7 @@ fn main() {
     println!("cargo::rerun-if-changed={}", custom_src.display());
     let custom_json = std::fs::read_to_string(&custom_src)
         .unwrap_or_else(|e| panic!("read {}: {e}", custom_src.display()));
-    let custom_generated = VanAvro::builder()
+    VanAvro::builder()
         .schema_json(custom_json)
         // `url` → `::url::Url`, converterless (round-trips as a plain string).
         .with_logical_type(
@@ -65,9 +70,8 @@ fn main() {
                 .converter("crate::CentsAsRecord")
                 .build(),
         )
-        .generate()
+        .generate_to_path(out_dir.join("custom_logical.rs"), true)
         .unwrap_or_else(|e| panic!("codegen custom_logical: {e}"));
-    write_module(&out_dir, "custom_logical", &custom_generated);
 
     // The `collapsed_refs` fixture exercises references *to* a collapsed
     // single-union record (SPEC §5.6): `Outer` holds a `Scalar` field, and
@@ -78,11 +82,10 @@ fn main() {
     println!("cargo::rerun-if-changed={}", collapsed_refs_src.display());
     let collapsed_refs_json = std::fs::read_to_string(&collapsed_refs_src)
         .unwrap_or_else(|e| panic!("read {}: {e}", collapsed_refs_src.display()));
-    let collapsed_refs_generated = VanAvro::builder()
+    VanAvro::builder()
         .schema_json(collapsed_refs_json)
-        .generate()
+        .generate_to_path(out_dir.join("collapsed_refs.rs"), true)
         .unwrap_or_else(|e| panic!("codegen collapsed_refs: {e}"));
-    write_module(&out_dir, "collapsed_refs", &collapsed_refs_generated);
 
     // The `uncollapsed_refs` fixture is the `collapsed_refs` shapes generated
     // with the SPEC §5.6 collapse *disabled* (`collapse_single_union(false)`).
@@ -93,12 +96,11 @@ fn main() {
     println!("cargo::rerun-if-changed={}", uncollapsed_refs_src.display());
     let uncollapsed_refs_json = std::fs::read_to_string(&uncollapsed_refs_src)
         .unwrap_or_else(|e| panic!("read {}: {e}", uncollapsed_refs_src.display()));
-    let uncollapsed_refs_generated = VanAvro::builder()
+    VanAvro::builder()
         .schema_json(uncollapsed_refs_json)
         .collapse_single_union(false)
-        .generate()
+        .generate_to_path(out_dir.join("uncollapsed_refs.rs"), true)
         .unwrap_or_else(|e| panic!("codegen uncollapsed_refs: {e}"));
-    write_module(&out_dir, "uncollapsed_refs", &uncollapsed_refs_generated);
 
     // The aliases fixture exercises record-, enum-, and fixed-*type* aliases
     // (plus field aliases). Type aliases have no serde representation but DO
@@ -109,23 +111,12 @@ fn main() {
     println!("cargo::rerun-if-changed={}", aliases_src.display());
     let aliases_json = std::fs::read_to_string(&aliases_src)
         .unwrap_or_else(|e| panic!("read {}: {e}", aliases_src.display()));
-    let aliases_generated = VanAvro::builder()
+    VanAvro::builder()
         .schema_json(aliases_json)
-        .generate()
+        .generate_to_path(out_dir.join("aliases.rs"), true)
         .unwrap_or_else(|e| panic!("codegen aliases: {e}"));
-    write_module(&out_dir, "aliases", &aliases_generated);
 
     println!("cargo::rerun-if-changed=build.rs");
-}
-
-/// Write the generated module body to `OUT_DIR/<stem>.rs`.
-///
-/// The generated source carries no module prelude (no banner, no inner
-/// `#![allow(...)]`), so it can be `include!`d mid-file at the crate root.
-/// The crate-level lint allowances live in `src/lib.rs` instead.
-fn write_module(out_dir: &std::path::Path, stem: &str, generated: &str) {
-    let out = out_dir.join(format!("{stem}.rs"));
-    std::fs::write(&out, generated).unwrap_or_else(|e| panic!("write {}: {e}", out.display()));
 }
 
 /// Fixture stems under `fixtures/` generated with default options; kept in sync

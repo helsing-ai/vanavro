@@ -20,6 +20,11 @@ struct Cli {
     #[arg(short, long, value_name = "FILE")]
     output: Option<PathBuf>,
 
+    /// Split `--output` into one file per namespace module, under a directory
+    /// named after the output's file stem.
+    #[arg(long, requires = "output")]
+    split: bool,
+
     /// Derive `bon::Builder` on generated record structs.
     #[arg(long)]
     builder: bool,
@@ -63,7 +68,7 @@ fn run(cli: Cli) -> Result<(), GeneratorError> {
     }
 
     match cli.output {
-        Some(path) => builder.generate_to_path(path),
+        Some(path) => builder.generate_to_path(path, cli.split),
         None => {
             let mut stdout = std::io::stdout().lock();
             builder.generate_to_writer(&mut stdout)

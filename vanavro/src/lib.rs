@@ -17,6 +17,7 @@ use thiserror::Error;
 mod codegen;
 mod logical;
 mod schema;
+mod split;
 
 pub use logical::AvroType;
 
@@ -170,22 +171,22 @@ impl<S: van_avro_builder::IsComplete> VanAvroBuilder<S> {
         self.build().generate_to_writer(writer)
     }
 
-    /// Run the generator and atomically write output to `path`.
-    pub fn generate_to_path(self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
-        self.build().generate_to_path(path)
+    /// Run the generator and atomically write output to `path`, split into one
+    /// file per namespace module when `split` is `true`. See
+    /// [`VanAvro::generate_to_path`].
+    pub fn generate_to_path(
+        self,
+        path: impl AsRef<Path>,
+        split: bool,
+    ) -> Result<(), GeneratorError> {
+        self.build().generate_to_path(path, split)
     }
 }
 
 impl VanAvro {
     /// Run the generator and return the formatted Rust source.
     pub fn generate(&self) -> Result<String, GeneratorError> {
-        let resolved = schema::parse(&self.schema_jsons, self.idl_path.as_deref())?;
-        codegen::generate(
-            &resolved.schemas,
-            &resolved.raw_names,
-            &self.logical_types,
-            self.codegen_options(),
-        )
+        Ok(codegen::format_file(&self.generate_file()?))
     }
 
     /// Run the generator and stream output into `writer`.
@@ -197,20 +198,59 @@ impl VanAvro {
 
     /// Run the generator and atomically write output to `path`.
     ///
-    /// The write goes through a sibling temp file and is renamed
-    /// on success; a partial file is never left behind on failure.
-    pub fn generate_to_path(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
+    /// Each file is written through a sibling temp file and renamed on
+    /// success, and nothing is written at all if generation fails.
+    ///
+    /// Without `split`, the whole output is written to `path` as one file.
+    ///
+    /// With `split`, `path` holds the root module, and each namespace module is
+    /// written to its own file under a directory named after `path`'s stem:
+    /// `out/gen.rs` declares `#[path = "gen/com.rs"] pub mod com;`,
+    /// `out/gen/com.rs` declares `#[path = "com/example.rs"] pub mod example;`,
+    /// and so on. The explicit `#[path]` attributes keep the root file
+    /// `include!`-able. Files left over from a previous run whose namespace no
+    /// longer exists are not removed; they are unreferenced and do not affect
+    /// compilation. Fails with [`GeneratorError::InvalidOutputPath`] if `path`
+    /// has no extension or a non-UTF-8 stem.
+    pub fn generate_to_path(
+        &self,
+        path: impl AsRef<Path>,
+        split: bool,
+    ) -> Result<(), GeneratorError> {
         let path = path.as_ref();
-        let source = self.generate()?;
+        let file = self.generate_file()?;
         let parent = path
             .parent()
             .filter(|p| !p.as_os_str().is_empty())
             .unwrap_or(Path::new("."));
-        let mut tmp = tempfile::NamedTempFile::new_in(parent)?;
-        tmp.write_all(source.as_bytes())?;
-        tmp.flush()?;
-        tmp.persist(path).map_err(|e| GeneratorError::Io(e.error))?;
-        Ok(())
+        if !split {
+            return write_atomically(parent, path, &codegen::format_file(&file));
+        }
+
+        // SPEC §8.3: validate the path before writing anything, then write each
+        // module file atomically (SPEC §8.2).
+        let stem = split_stem(path)?;
+        let (root, modules) = split::split(file, stem);
+        let module_dir = parent.join(stem);
+        for (relative, module) in &modules {
+            let target = module_dir.join(relative);
+            let dir = target.parent().unwrap_or(&module_dir);
+            std::fs::create_dir_all(dir)?;
+            write_atomically(dir, &target, &codegen::format_file(module))?;
+        }
+        // The root goes last, so it never references a module file that has
+        // not been written yet.
+        write_atomically(parent, path, &codegen::format_file(&root))
+    }
+
+    fn generate_file(&self) -> Result<syn::File, GeneratorError> {
+        let resolved = schema::parse(&self.schema_jsons, self.idl_path.as_deref())?;
+        codegen::generate_file(
+            &resolved.schemas,
+            &resolved.raw_names,
+            &self.logical_types,
+            self.codegen_options(),
+        )
     }
 
     fn codegen_options(&self) -> codegen::CodegenOptions {
@@ -221,6 +261,36 @@ impl VanAvro {
             allow_unregistered_logical_types: self.allow_unregistered_logical_types,
         }
     }
+}
+
+/// Write `source` to `path` through a temp file in `dir`, renamed on success.
+fn write_atomically(dir: &Path, path: &Path, source: &str) -> Result<(), GeneratorError> {
+    let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
+    tmp.write_all(source.as_bytes())?;
+    tmp.flush()?;
+    tmp.persist(path).map_err(|e| GeneratorError::Io(e.error))?;
+    Ok(())
+}
+
+/// The file stem of a split output's root, which names both the module
+/// directory beside it and the `#[path]` prefix of its module declarations.
+fn split_stem(path: &Path) -> Result<&str, GeneratorError> {
+    let invalid = |detail: &str| GeneratorError::InvalidOutputPath {
+        path: path.to_path_buf(),
+        detail: detail.to_string(),
+    };
+    // Without an extension the module directory `<stem>/` would be `path`
+    // itself.
+    if path.extension().is_none() {
+        return Err(invalid(
+            "a split output needs a file extension (e.g. `.rs`), since its modules \
+             are written to a directory named after the file stem; add one or \
+             write a single file by not splitting the output",
+        ));
+    }
+    path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| {
+        invalid("the file stem must be valid UTF-8 to be used in `#[path]` attributes")
+    })
 }
 
 /// Errors surfaced from any `generate*` call.
@@ -346,6 +416,16 @@ pub enum GeneratorError {
         first: String,
         /// Second (later-declared) Avro name.
         second: String,
+    },
+
+    /// The output path given to [`VanAvro::generate_to_path`] cannot hold a
+    /// split output (see the `split` argument).
+    #[error("invalid output path `{}`: {detail}", path.display())]
+    InvalidOutputPath {
+        /// The requested output path.
+        path: PathBuf,
+        /// Why it cannot be used, and how to fix it.
+        detail: String,
     },
 
     /// Internal invariant violation while emitting `TokenStream`. Always a bug.
@@ -766,11 +846,85 @@ mod tests {
                 r#"{"type":"record","name":"R","namespace":"t","fields":[{"name":"x","type":"int"}]}"#,
             )
             .build()
-            .generate_to_path(&target)
+            .generate_to_path(&target, false)
             .expect("generate_to_path succeeds");
         let written = std::fs::read_to_string(&target).expect("read back");
+        assert!(written.contains("pub mod t {"), "{written}");
         assert!(written.contains("pub struct R"), "{written}");
         assert!(written.contains("pub x: i32"), "{written}");
+        assert!(
+            !tmp.path().join("generated").exists(),
+            "an unsplit output must not create a module directory"
+        );
+    }
+
+    // SPEC §8.3 — `split` writes the root module to the requested path and
+    // each namespace module to its own file under `<stem>/`, wired up with
+    // `#[path]` declarations relative to the declaring file.
+    #[test]
+    fn generate_to_path_splits_modules_into_files() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let target = tmp.path().join("generated.rs");
+        VanAvro::builder()
+            .schema_json(r#"{"type":"record","name":"Root","fields":[{"name":"x","type":"int"}]}"#)
+            .schema_json(
+                r#"{"type":"record","name":"Deep","namespace":"com.example","fields":[
+                    {"name":"e","type":"com.E"}
+                ]}"#,
+            )
+            .schema_json(r#"{"type":"enum","name":"E","namespace":"com","symbols":["A"]}"#)
+            .build()
+            .generate_to_path(&target, true)
+            .expect("generate_to_path succeeds");
+
+        let read = |p: &Path| {
+            std::fs::read_to_string(p).unwrap_or_else(|e| panic!("read {}: {e}", p.display()))
+        };
+        let root = read(&target);
+        assert!(root.contains("pub struct Root"), "{root}");
+        assert!(
+            root.contains("#[path = \"generated/com.rs\"]\npub mod com;"),
+            "{root}"
+        );
+        assert!(!root.contains("pub enum E"), "{root}");
+
+        let com = read(&tmp.path().join("generated/com.rs"));
+        assert!(com.contains("pub enum E"), "{com}");
+        assert!(
+            com.contains("#[path = \"com/example.rs\"]\npub mod example;"),
+            "{com}"
+        );
+        assert!(!com.contains("pub struct Deep"), "{com}");
+
+        let example = read(&tmp.path().join("generated/com/example.rs"));
+        assert!(example.contains("pub struct Deep"), "{example}");
+        // Cross-module references are unchanged by the split.
+        assert!(example.contains("pub e: super::E"), "{example}");
+    }
+
+    // SPEC §8.1 / §8.3 — a split output's modules go in a directory named after the file stem, so
+    // an extensionless path (whose stem *is* the path) is rejected up front,
+    // with an actionable message and nothing written.
+    #[test]
+    fn split_rejects_extensionless_path() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let target = tmp.path().join("generated");
+        let err = VanAvro::builder()
+            .schema_json(
+                r#"{"type":"record","name":"R","namespace":"t","fields":[{"name":"x","type":"int"}]}"#,
+            )
+            .build()
+            .generate_to_path(&target, true)
+            .expect_err("extensionless split path must be rejected");
+        match &err {
+            GeneratorError::InvalidOutputPath { path, detail } => {
+                assert_eq!(path, &target);
+                assert!(detail.contains("extension"), "{detail}");
+                assert!(detail.contains("split"), "{detail}");
+            }
+            other => panic!("expected InvalidOutputPath, got {other:?}"),
+        }
+        assert!(!target.exists(), "nothing must be written: {target:?}");
     }
 
     // SPEC §8.2 atomicity — on codegen failure the target path must not
@@ -788,7 +942,7 @@ mod tests {
                 ]}"#,
             )
             .build()
-            .generate_to_path(&target)
+            .generate_to_path(&target, true)
             .expect_err("nested multi-variant union must fail codegen");
         assert!(matches!(err, GeneratorError::UnsupportedSchema { .. }));
         assert!(
