@@ -68,7 +68,8 @@ fn run(cli: Cli) -> Result<(), GeneratorError> {
     }
 
     match cli.output {
-        Some(path) => builder.generate_to_path(path, cli.split),
+        Some(path) if cli.split => builder.generate_to_tree(path),
+        Some(path) => builder.generate_to_path(path),
         None => {
             let mut stdout = std::io::stdout().lock();
             builder.generate_to_writer(&mut stdout)

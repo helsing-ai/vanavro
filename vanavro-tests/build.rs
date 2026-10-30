@@ -3,9 +3,9 @@
 // Each fixture is emitted to `OUT_DIR/<stem>.rs` and pulled into the crate by
 // `src/lib.rs` via `include!`, mirroring the canonical `build.rs` integration
 // pattern from SPEC §4.2 (generate into `OUT_DIR`, `include!` from source).
-// Generation uses the split layout (SPEC §8.3), so each namespace
-// module lands in `OUT_DIR/<stem>/…` and compiling this crate proves the
-// `#[path]` wiring survives `include!`. The generated source carries no module
+// Generation uses the split layout (`generate_to_tree`, SPEC §8.3), so each
+// namespace module lands in `OUT_DIR/<stem>/…` and compiling this crate proves
+// the `#[path]` wiring survives `include!`. The generated source carries no module
 // prelude (no banner, no inner `#![allow(...)]`), so it can be `include!`d
 // mid-file at the crate root; the crate-level lint allowances live in
 // `src/lib.rs` instead.
@@ -26,7 +26,7 @@ fn main() {
             std::fs::read_to_string(&src).unwrap_or_else(|e| panic!("read {}: {e}", src.display()));
         VanAvro::builder()
             .schema_json(json)
-            .generate_to_path(out_dir.join(format!("{stem}.rs")), true)
+            .generate_to_tree(out_dir.join(format!("{stem}.rs")))
             .unwrap_or_else(|e| panic!("codegen {stem}: {e}"));
     }
 
@@ -70,7 +70,7 @@ fn main() {
                 .converter("crate::CentsAsRecord")
                 .build(),
         )
-        .generate_to_path(out_dir.join("custom_logical.rs"), true)
+        .generate_to_tree(out_dir.join("custom_logical.rs"))
         .unwrap_or_else(|e| panic!("codegen custom_logical: {e}"));
 
     // The `collapsed_refs` fixture exercises references *to* a collapsed
@@ -84,7 +84,7 @@ fn main() {
         .unwrap_or_else(|e| panic!("read {}: {e}", collapsed_refs_src.display()));
     VanAvro::builder()
         .schema_json(collapsed_refs_json)
-        .generate_to_path(out_dir.join("collapsed_refs.rs"), true)
+        .generate_to_tree(out_dir.join("collapsed_refs.rs"))
         .unwrap_or_else(|e| panic!("codegen collapsed_refs: {e}"));
 
     // The `uncollapsed_refs` fixture is the `collapsed_refs` shapes generated
@@ -99,7 +99,7 @@ fn main() {
     VanAvro::builder()
         .schema_json(uncollapsed_refs_json)
         .collapse_single_union(false)
-        .generate_to_path(out_dir.join("uncollapsed_refs.rs"), true)
+        .generate_to_tree(out_dir.join("uncollapsed_refs.rs"))
         .unwrap_or_else(|e| panic!("codegen uncollapsed_refs: {e}"));
 
     // The aliases fixture exercises record-, enum-, and fixed-*type* aliases
@@ -113,7 +113,7 @@ fn main() {
         .unwrap_or_else(|e| panic!("read {}: {e}", aliases_src.display()));
     VanAvro::builder()
         .schema_json(aliases_json)
-        .generate_to_path(out_dir.join("aliases.rs"), true)
+        .generate_to_tree(out_dir.join("aliases.rs"))
         .unwrap_or_else(|e| panic!("codegen aliases: {e}"));
 
     println!("cargo::rerun-if-changed=build.rs");

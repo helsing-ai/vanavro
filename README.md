@@ -91,7 +91,7 @@ fn main() {
 
     VanAvro::builder()
         .schema_json(schema)
-        .generate_to_path(out_dir.join("my_schema.rs"), true)
+        .generate_to_path(out_dir.join("my_schema.rs"))
         .unwrap();
 }
 ```
@@ -122,10 +122,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-With `split = true`, `my_schema.rs` holds only the root module, and each
-namespace module goes into its own file under `my_schema/`, mirroring the Rust
-module tree (`my_schema/com.rs`, `my_schema/com/example.rs`, …). Pass `false`
-to write everything into one file.
+To split a large output into reviewable files, call `.generate_to_tree(path)`
+instead of `.generate_to_path(path)`: `my_schema.rs` then holds only the root
+module, and each namespace module goes into its own file under `my_schema/`,
+mirroring the Rust module tree (`my_schema/com.rs`, `my_schema/com/example.rs`,
+…). The `include!` above works unchanged.
 
 ### Multiple schemas with shared types
 
@@ -135,7 +136,7 @@ Call `.schema_json` repeatedly on one builder so shared types are defined once:
 VanAvro::builder()
     .schema_json(schema_a)
     .schema_json(schema_b)
-    .generate_to_path(out_dir.join("schemas.rs"), true)
+    .generate_to_path(out_dir.join("schemas.rs"))
     .unwrap();
 ```
 
@@ -144,7 +145,7 @@ VanAvro::builder()
 ```rust
 VanAvro::builder()
     .idl_path("schemas/protocol.avdl")
-    .generate_to_path(out_dir.join("protocol.rs"), true)
+    .generate_to_path(out_dir.join("protocol.rs"))
     .unwrap();
 ```
 
@@ -160,7 +161,8 @@ VanAvro::builder()
 | `.with_logical_type(CustomLogicalType)`                          | Map a custom `logicalType` onto a Rust type (repeatable)      |
 | `.allow_unregistered_logical_types(bool)`                        | Ignore unknown `logicalType`s instead of erroring (default: `false`) |
 | `.generate()`                                                    | Generate and return a `String`                                |
-| `.generate_to_path(path, split)`                                 | Generate and atomically write to a file (or multiple, if `split` is `true`)|
+| `.generate_to_path(path)`                                        | Generate and atomically write to a file                       |
+| `.generate_to_tree(path)`                                        | Generate and atomically write one file per namespace module   |
 | `.generate_to_writer(writer)`                                    | Generate and stream to a writer                               |
 
 ## Custom logical types

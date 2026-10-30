@@ -67,19 +67,21 @@ impl<S: van_avro_builder::IsComplete> VanAvroBuilder<S> {
     pub fn build(self) -> VanAvro;
     pub fn generate(self) -> Result<String, GeneratorError>;
     pub fn generate_to_writer<W: Write>(self, writer: &mut W) -> Result<(), GeneratorError>;
-    pub fn generate_to_path(self, path: impl AsRef<Path>, split: bool) -> Result<(), GeneratorError>;
+    pub fn generate_to_path(self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
+    pub fn generate_to_tree(self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
 }
 
 impl VanAvro {
     pub fn generate(&self) -> Result<String, GeneratorError>;
     pub fn generate_to_writer<W: Write>(&self, writer: &mut W) -> Result<(), GeneratorError>;
-    pub fn generate_to_path(&self, path: impl AsRef<Path>, split: bool) -> Result<(), GeneratorError>;
+    pub fn generate_to_path(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
+    pub fn generate_to_tree(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
 }
 ```
 
 See **Section 15** for the custom-logical-type registration semantics.
 
-Splitting is an argument of `generate_to_path` rather than a builder option, because it only has meaning for a filesystem destination: `generate` and `generate_to_writer` produce a single stream and have nowhere to put module files. See **Section 8.3** for the layout.
+`generate_to_path` writes the whole output to one file; `generate_to_tree` splits it into one file per namespace module (**Section 8.3**). Splitting is a separate output method rather than a builder option, because it only has meaning for a filesystem destination: `generate` and `generate_to_writer` produce a single stream and have nowhere to put module files. Keeping it out of `generate_to_path`'s signature also leaves that method unchanged from earlier releases.
 
 The legacy `register_logical_type` and `register_logical_type_with` convenience methods are not part of the current builder API. Register mappings with `.with_logical_type(CustomLogicalType::builder(...).build())` instead; compatibility wrappers for earlier API drafts are not required before `1.0`.
 
@@ -454,7 +456,7 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 
 | Variant                                                                    | Cause                                                                                                                                                                                    |
 | :------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Io(std::io::Error)`                                                       | Filesystem read/write of output files, or of `.avsc` inputs read by the CLI. Carries no path; for `generate_to_path` the OS error may name the sibling temp file (§8.2) rather than the requested output. A missing or unreadable `.avdl` is reported as `IdlParse`, not `Io`, because `avdl` performs the read. |
+| `Io(std::io::Error)`                                                       | Filesystem read/write of output files, or of `.avsc` inputs read by the CLI. Carries no path; for `generate_to_path` / `generate_to_tree` the OS error may name the sibling temp file (§8.2) rather than the requested output. A missing or unreadable `.avdl` is reported as `IdlParse`, not `Io`, because `avdl` performs the read. |
 | `SchemaParse { source: String, inner: apache_avro::Error }`                | `.avsc` JSON failed to parse; `source` is `"<schemas[N]>"` for the N-th input, or `"<merged registry>"` for the combined cross-reference pass. Inputs are JSON strings, so no file path is available. |
 | `IdlParse { source: String, inner: Box<dyn Error + Send + Sync> }`         | `.avdl` file failed to parse; `source` is the IDL path and `inner` the pre-rendered `avdl` diagnostic. Only exists with the `idl` feature.                                                |
 | `DuplicateName { name: String, first: String, second: String }`            | Same fully-qualified name declared in two inputs with non-equal schemas.                                                                                                                 |
@@ -464,7 +466,7 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 | `InvalidRustType { logical_type: String, detail: String }`                 | A registered custom logical type (§15) supplied a `rust_type` / `converter` / `builder_with` that does not parse as a Rust type / path / token stream. `logical_type` is the `logicalType` name, or the record's fully-qualified name for a record-level mapping. |
 | `ForceEqHashOnMap { logical_type: String, field: String, record: String }` | A `force_eq_hash` mapping (§15) is used in a map-value position, where the `HashMap` field can never be `Hash` (§11.1).                                                                  |
 | `NameCollision { kind, scope, rust_ident, first, second }`                 | Two distinct Avro names fold onto the same Rust identifier after case conversion / keyword escaping.                                                                                     |
-| `InvalidOutputPath { path: PathBuf, detail: String }`                      | `generate_to_path` was asked to split (§8.3) into a path with no file extension (its module directory would be the path itself) or a non-UTF-8 file stem (unusable in a `#[path]` attribute). Raised before anything is written. |
+| `InvalidOutputPath { path: PathBuf, detail: String }`                      | `generate_to_tree` (§8.3) was given a path with no file extension (its module directory would be the path itself) or a non-UTF-8 file stem (unusable in a `#[path]` attribute). Raised before anything is written. |
 | `Codegen(syn::Error)`                                                      | Reserved for an internal invariant violation while emitting `TokenStream`. Currently never constructed.                                                                                  |
 | `Format(syn::Error)`                                                       | `syn::parse2` failed to parse the generated tokens into a `syn::File` before `prettyplease` formatting (bug).                                                                            |
 
@@ -472,12 +474,12 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 
 - CLI renders errors with `miette`'s graphical handler; library users receive structured `GeneratorError` directly.
 - Source spans are **not** surfaced through `miette::Diagnostic`: `GeneratorError` carries no `#[diagnostic]` labels. The `avdl` diagnostic (source span, label, help) is pre-rendered to text inside `IdlParse::inner`; `apache-avro` errors carry no spans.
-- `generate_to_path` must write to a sibling temp file and atomically rename on success — never leave a partial output on failure.
-  - With `split` (§8.3), each file is written atomically this way, and nothing is written at all if generation or path validation fails. The set of files as a whole is **not** atomic: an I/O failure midway can leave some module files updated and others not. Module files are written before the root, so the root never declares a module whose file has not been written in this run.
+- `generate_to_path` and `generate_to_tree` must write to a sibling temp file and atomically rename on success — never leave a partial output on failure.
+  - For `generate_to_tree` (§8.3), each file is written atomically this way, and nothing is written at all if generation or path validation fails. The set of files as a whole is **not** atomic: an I/O failure midway can leave some module files updated and others not. Module files are written before the root, so the root never declares a module whose file has not been written in this run.
 
 ### 8.3. Split Output
 
-`generate_to_path(path, split = true)` (CLI: `--split`, which requires `--output`) partitions the generated source along the namespace module tree of §6.1, so large outputs are reviewable file by file:
+`generate_to_tree(path)` (CLI: `--split`, which requires `--output`) partitions the generated source along the namespace module tree of §6.1, so large outputs are reviewable file by file:
 
 - `path` holds the root module: the root-namespace items, and a declaration for each top-level namespace module.
 - Every `pub mod x { … }` is moved into its own file and replaced in its parent by `#[path = "<dir>/x.rs"] pub mod x;`, recursively. For `out/gen.rs` the files are `out/gen/com.rs`, `out/gen/com/example.rs`, …, i.e. a directory named after `path`'s file stem holds the tree.
@@ -989,7 +991,7 @@ VanAvro::builder()
             .converter("crate::serde_wgs84::Wgs84")
             .build(),
     )
-    .generate_to_path(out_dir.join("generated.rs"), true)?;
+    .generate_to_path(out_dir.join("generated.rs"))?;
 ```
 
 The generated `geo::Route` carries `#[serde_as]`, its `waypoints` field is `Vec<::sguaba::systems::Wgs84>` with `#[serde_as(as = "Vec<crate::serde_wgs84::Wgs84>")]`, no `Wgs84Coordinate` struct is emitted, and `Route::schema()` still embeds the original `wgs84`-annotated record. Because `--builder` is active, `example::UserProfile.website` (type `::url::Url`) additionally carries `#[builder(with = |s: &str| ::url::Url::parse(s))]`, so callers construct it with `UserProfile::builder().website("https://…")?`.
