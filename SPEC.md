@@ -466,7 +466,6 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 | `InvalidRustType { logical_type: String, detail: String }`                 | A registered custom logical type (§15) supplied a `rust_type` / `converter` / `builder_with` that does not parse as a Rust type / path / token stream. `logical_type` is the `logicalType` name, or the record's fully-qualified name for a record-level mapping. |
 | `ForceEqHashOnMap { logical_type: String, field: String, record: String }` | A `force_eq_hash` mapping (§15) is used in a map-value position, where the `HashMap` field can never be `Hash` (§11.1).                                                                  |
 | `NameCollision { kind, scope, rust_ident, first, second }`                 | Two distinct Avro names fold onto the same Rust identifier after case conversion / keyword escaping.                                                                                     |
-| `InvalidOutputPath { path: PathBuf, detail: String }`                      | `generate_to_tree` (§8.3) was given a path with no file extension (its module directory would be the path itself) or a non-UTF-8 file stem (unusable in a `#[path]` attribute). Raised before anything is written. |
 | `Codegen(syn::Error)`                                                      | Reserved for an internal invariant violation while emitting `TokenStream`. Currently never constructed.                                                                                  |
 | `Format(syn::Error)`                                                       | `syn::parse2` failed to parse the generated tokens into a `syn::File` before `prettyplease` formatting (bug).                                                                            |
 
@@ -475,7 +474,7 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 - CLI renders errors with `miette`'s graphical handler; library users receive structured `GeneratorError` directly.
 - Source spans are **not** surfaced through `miette::Diagnostic`: `GeneratorError` carries no `#[diagnostic]` labels. The `avdl` diagnostic (source span, label, help) is pre-rendered to text inside `IdlParse::inner`; `apache-avro` errors carry no spans.
 - `generate_to_path` and `generate_to_tree` must write to a sibling temp file and atomically rename on success — never leave a partial output on failure.
-  - For `generate_to_tree` (§8.3), each file is written atomically this way, and nothing is written at all if generation or path validation fails. The set of files as a whole is **not** atomic: an I/O failure midway can leave some module files updated and others not. Module files are written before the root, so the root never declares a module whose file has not been written in this run.
+  - For `generate_to_tree` (§8.3), each file is written atomically this way, and nothing is written at all if generation fails. The set of files as a whole is **not** atomic: an I/O failure midway can leave some module files updated and others not. Module files are written before the root, so the root never declares a module whose file has not been written in this run.
 
 ### 8.3. Split Output
 
@@ -486,7 +485,7 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 - The `#[path]` attribute is **required**, not cosmetic. The output is meant to be `include!`d (§11.6), and a bare `mod x;` inside an `include!`d file resolves against the directory of the *including* source file (as `include_str!` does, §4.2), so it would not compile. A `#[path]` on an out-of-line module declared in a non-`mod.rs` file resolves relative to that file's own directory, so the root file declares `#[path = "gen/com.rs"]` and `gen/com.rs` declares `#[path = "com/example.rs"]`. This also makes the tree usable directly as a source module (`mod gen;` beside `gen.rs`).
 - File names are the module idents with any `r#` prefix removed (`pub mod r#type;` lives in `type.rs`). Module idents are snake_case and unique per parent (§5.2), so file names cannot collide.
 - Splitting is a pure partition: re-inlining every module file reproduces the single-file output's items in the same order. No item, path, or visibility changes, so cross-module references (§6.2) and the `pub(crate)` builders (§12.1) work identically. Each file is formatted like the single-file output (§11.6, §11.7).
-- `path` must have a file extension, and its stem must be valid UTF-8; otherwise `InvalidOutputPath` (§8.1) is raised.
+- `path` is expected to have a file extension and a valid UTF-8 file stem. This is the caller's responsibility and is deliberately **not** validated: without an extension the module directory would be `path` itself, and a non-UTF-8 stem is converted lossily, so the `#[path]` attributes would not match the directory written.
 - Module files from an earlier run whose namespace no longer exists are **not** deleted: they are unreferenced by the new root and do not affect compilation. vanavro never deletes files it did not just write.
 
 ---

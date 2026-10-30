@@ -218,19 +218,22 @@ impl VanAvro {
     /// Each file is written through a sibling temp file and renamed on
     /// success, and nothing is written at all if generation fails. Files left
     /// over from a previous run whose namespace no longer exists are not
-    /// removed; they are unreferenced and do not affect compilation. Fails
-    /// with [`GeneratorError::InvalidOutputPath`] if `path` has no extension or
-    /// a non-UTF-8 stem.
+    /// removed; they are unreferenced and do not affect compilation.
+    ///
+    /// `path` is expected to have a file extension (e.g. `.rs`) and a valid
+    /// UTF-8 file stem. This is not checked: without an extension the module
+    /// directory would be `path` itself, and a non-UTF-8 stem cannot be
+    /// represented faithfully in the `#[path]` attributes.
     pub fn generate_to_tree(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
         let path = path.as_ref();
         let file = self.generate_file()?;
         let parent = output_parent(path);
 
-        // SPEC §8.3: validate the path before writing anything, then write each
-        // module file atomically (SPEC §8.2).
-        let stem = tree_stem(path)?;
-        let (root, modules) = split::split(file, stem);
-        let module_dir = parent.join(stem);
+        // SPEC §8.3: the path is assumed well-formed and is not validated.
+        // Each module file is written atomically (SPEC §8.2).
+        let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+        let (root, modules) = split::split(file, &stem);
+        let module_dir = parent.join(&*stem);
         for (relative, module) in &modules {
             let target = module_dir.join(relative);
             let dir = target.parent().unwrap_or(&module_dir);
@@ -276,27 +279,6 @@ fn output_parent(path: &Path) -> &Path {
     path.parent()
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(Path::new("."))
-}
-
-/// The file stem of a tree output's root, which names both the module
-/// directory beside it and the `#[path]` prefix of its module declarations.
-fn tree_stem(path: &Path) -> Result<&str, GeneratorError> {
-    let invalid = |detail: &str| GeneratorError::InvalidOutputPath {
-        path: path.to_path_buf(),
-        detail: detail.to_string(),
-    };
-    // Without an extension the module directory `<stem>/` would be `path`
-    // itself.
-    if path.extension().is_none() {
-        return Err(invalid(
-            "a split output needs a file extension (e.g. `.rs`), since its modules \
-             are written to a directory named after the file stem; add one, or \
-             write a single file with `generate_to_path` instead",
-        ));
-    }
-    path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| {
-        invalid("the file stem must be valid UTF-8 to be used in `#[path]` attributes")
-    })
 }
 
 /// Errors surfaced from any `generate*` call.
@@ -422,16 +404,6 @@ pub enum GeneratorError {
         first: String,
         /// Second (later-declared) Avro name.
         second: String,
-    },
-
-    /// The output path given to [`VanAvro::generate_to_tree`] cannot hold a
-    /// split output.
-    #[error("invalid output path `{}`: {detail}", path.display())]
-    InvalidOutputPath {
-        /// The requested output path.
-        path: PathBuf,
-        /// Why it cannot be used, and how to fix it.
-        detail: String,
     },
 
     /// Internal invariant violation while emitting `TokenStream`. Always a bug.
@@ -906,31 +878,6 @@ mod tests {
         assert!(example.contains("pub struct Deep"), "{example}");
         // Cross-module references are unchanged by the split.
         assert!(example.contains("pub e: super::E"), "{example}");
-    }
-
-    // SPEC §8.1 / §8.3 — a split output's modules go in a directory named after the file stem, so
-    // an extensionless path (whose stem *is* the path) is rejected up front,
-    // with an actionable message and nothing written.
-    #[test]
-    fn generate_to_tree_rejects_extensionless_path() {
-        let tmp = tempfile::tempdir().expect("tempdir");
-        let target = tmp.path().join("generated");
-        let err = VanAvro::builder()
-            .schema_json(
-                r#"{"type":"record","name":"R","namespace":"t","fields":[{"name":"x","type":"int"}]}"#,
-            )
-            .build()
-            .generate_to_tree(&target)
-            .expect_err("extensionless tree path must be rejected");
-        match &err {
-            GeneratorError::InvalidOutputPath { path, detail } => {
-                assert_eq!(path, &target);
-                assert!(detail.contains("extension"), "{detail}");
-                assert!(detail.contains("generate_to_path"), "{detail}");
-            }
-            other => panic!("expected InvalidOutputPath, got {other:?}"),
-        }
-        assert!(!target.exists(), "nothing must be written: {target:?}");
     }
 
     // SPEC §8.2 atomicity — on codegen failure the target path must not
