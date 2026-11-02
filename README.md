@@ -122,6 +122,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+To split a large output into reviewable files, call `.generate_to_tree(path)`
+instead of `.generate_to_path(path)`: `my_schema.rs` then holds only the root
+module, and each namespace module goes into its own file under `my_schema/`,
+mirroring the Rust module tree (`my_schema/com.rs`, `my_schema/com/example.rs`,
+…). The `include!` above works unchanged.
+
 ### Multiple schemas with shared types
 
 Call `.schema_json` repeatedly on one builder so shared types are defined once:
@@ -156,6 +162,7 @@ VanAvro::builder()
 | `.allow_unregistered_logical_types(bool)`                        | Ignore unknown `logicalType`s instead of erroring (default: `false`) |
 | `.generate()`                                                    | Generate and return a `String`                                |
 | `.generate_to_path(path)`                                        | Generate and atomically write to a file                       |
+| `.generate_to_tree(path)`                                        | Generate and atomically write one file per namespace module   |
 | `.generate_to_writer(writer)`                                    | Generate and stream to a writer                               |
 
 ## Custom logical types

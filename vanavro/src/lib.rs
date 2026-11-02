@@ -17,6 +17,7 @@ use thiserror::Error;
 mod codegen;
 mod logical;
 mod schema;
+mod split;
 
 pub use logical::AvroType;
 
@@ -174,18 +175,18 @@ impl<S: van_avro_builder::IsComplete> VanAvroBuilder<S> {
     pub fn generate_to_path(self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
         self.build().generate_to_path(path)
     }
+
+    /// Run the generator and atomically write output to `path`, split into one
+    /// file per namespace module. See [`VanAvro::generate_to_tree`].
+    pub fn generate_to_tree(self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
+        self.build().generate_to_tree(path)
+    }
 }
 
 impl VanAvro {
     /// Run the generator and return the formatted Rust source.
     pub fn generate(&self) -> Result<String, GeneratorError> {
-        let resolved = schema::parse(&self.schema_jsons, self.idl_path.as_deref())?;
-        codegen::generate(
-            &resolved.schemas,
-            &resolved.raw_names,
-            &self.logical_types,
-            self.codegen_options(),
-        )
+        Ok(codegen::format_file(&self.generate_file()?))
     }
 
     /// Run the generator and stream output into `writer`.
@@ -195,22 +196,63 @@ impl VanAvro {
         Ok(())
     }
 
-    /// Run the generator and atomically write output to `path`.
-    ///
-    /// The write goes through a sibling temp file and is renamed
-    /// on success; a partial file is never left behind on failure.
+    /// Run the generator and atomically write output to `path`, through a
+    /// sibling temp file renamed on success. Nothing is written if generation
+    /// fails.
     pub fn generate_to_path(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
         let path = path.as_ref();
-        let source = self.generate()?;
-        let parent = path
-            .parent()
-            .filter(|p| !p.as_os_str().is_empty())
-            .unwrap_or(Path::new("."));
-        let mut tmp = tempfile::NamedTempFile::new_in(parent)?;
-        tmp.write_all(source.as_bytes())?;
-        tmp.flush()?;
-        tmp.persist(path).map_err(|e| GeneratorError::Io(e.error))?;
-        Ok(())
+        let file = self.generate_file()?;
+        write_atomically(output_parent(path), path, &codegen::format_file(&file))
+    }
+
+    /// Run the generator and atomically write output to `path`, split into one
+    /// file per namespace module.
+    ///
+    /// `path` holds the root module, and each namespace module is written to
+    /// its own file under a directory named after `path`'s stem:
+    /// `out/gen.rs` declares `#[path = "gen/com.rs"] pub mod com;`,
+    /// `out/gen/com.rs` declares `#[path = "com/example.rs"] pub mod example;`,
+    /// and so on. The explicit `#[path]` attributes keep the root file
+    /// `include!`-able.
+    ///
+    /// Each file is written through a sibling temp file and renamed on
+    /// success, and nothing is written at all if generation fails. Files left
+    /// over from a previous run whose namespace no longer exists are not
+    /// removed; they are unreferenced and do not affect compilation.
+    ///
+    /// `path` is expected to have a file extension (e.g. `.rs`) and a valid
+    /// UTF-8 file stem. This is not checked: without an extension the module
+    /// directory would be `path` itself, and a non-UTF-8 stem cannot be
+    /// represented faithfully in the `#[path]` attributes.
+    pub fn generate_to_tree(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError> {
+        let path = path.as_ref();
+        let file = self.generate_file()?;
+        let parent = output_parent(path);
+
+        // SPEC §8.3: the path is assumed well-formed and is not validated.
+        // Each module file is written atomically (SPEC §8.2).
+        let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+        let (root, modules) = split::split(file, &stem);
+        let module_dir = parent.join(&*stem);
+        for (relative, module) in &modules {
+            let target = module_dir.join(relative);
+            let dir = target.parent().unwrap_or(&module_dir);
+            std::fs::create_dir_all(dir)?;
+            write_atomically(dir, &target, &codegen::format_file(module))?;
+        }
+        // The root goes last, so it never references a module file that has
+        // not been written yet.
+        write_atomically(parent, path, &codegen::format_file(&root))
+    }
+
+    fn generate_file(&self) -> Result<syn::File, GeneratorError> {
+        let resolved = schema::parse(&self.schema_jsons, self.idl_path.as_deref())?;
+        codegen::generate_file(
+            &resolved.schemas,
+            &resolved.raw_names,
+            &self.logical_types,
+            self.codegen_options(),
+        )
     }
 
     fn codegen_options(&self) -> codegen::CodegenOptions {
@@ -221,6 +263,22 @@ impl VanAvro {
             allow_unregistered_logical_types: self.allow_unregistered_logical_types,
         }
     }
+}
+
+/// Write `source` to `path` through a temp file in `dir`, renamed on success.
+fn write_atomically(dir: &Path, path: &Path, source: &str) -> Result<(), GeneratorError> {
+    let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
+    tmp.write_all(source.as_bytes())?;
+    tmp.flush()?;
+    tmp.persist(path).map_err(|e| GeneratorError::Io(e.error))?;
+    Ok(())
+}
+
+/// The directory holding `path`, where its sibling temp file is created.
+fn output_parent(path: &Path) -> &Path {
+    path.parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."))
 }
 
 /// Errors surfaced from any `generate*` call.
@@ -769,8 +827,57 @@ mod tests {
             .generate_to_path(&target)
             .expect("generate_to_path succeeds");
         let written = std::fs::read_to_string(&target).expect("read back");
+        assert!(written.contains("pub mod t {"), "{written}");
         assert!(written.contains("pub struct R"), "{written}");
         assert!(written.contains("pub x: i32"), "{written}");
+        assert!(
+            !tmp.path().join("generated").exists(),
+            "an unsplit output must not create a module directory"
+        );
+    }
+
+    // SPEC §8.3 — `generate_to_tree` writes the root module to the requested path and
+    // each namespace module to its own file under `<stem>/`, wired up with
+    // `#[path]` declarations relative to the declaring file.
+    #[test]
+    fn generate_to_tree_splits_modules_into_files() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let target = tmp.path().join("generated.rs");
+        VanAvro::builder()
+            .schema_json(r#"{"type":"record","name":"Root","fields":[{"name":"x","type":"int"}]}"#)
+            .schema_json(
+                r#"{"type":"record","name":"Deep","namespace":"com.example","fields":[
+                    {"name":"e","type":"com.E"}
+                ]}"#,
+            )
+            .schema_json(r#"{"type":"enum","name":"E","namespace":"com","symbols":["A"]}"#)
+            .build()
+            .generate_to_tree(&target)
+            .expect("generate_to_tree succeeds");
+
+        let read = |p: &Path| {
+            std::fs::read_to_string(p).unwrap_or_else(|e| panic!("read {}: {e}", p.display()))
+        };
+        let root = read(&target);
+        assert!(root.contains("pub struct Root"), "{root}");
+        assert!(
+            root.contains("#[path = \"generated/com.rs\"]\npub mod com;"),
+            "{root}"
+        );
+        assert!(!root.contains("pub enum E"), "{root}");
+
+        let com = read(&tmp.path().join("generated/com.rs"));
+        assert!(com.contains("pub enum E"), "{com}");
+        assert!(
+            com.contains("#[path = \"com/example.rs\"]\npub mod example;"),
+            "{com}"
+        );
+        assert!(!com.contains("pub struct Deep"), "{com}");
+
+        let example = read(&tmp.path().join("generated/com/example.rs"));
+        assert!(example.contains("pub struct Deep"), "{example}");
+        // Cross-module references are unchanged by the split.
+        assert!(example.contains("pub e: super::E"), "{example}");
     }
 
     // SPEC §8.2 atomicity — on codegen failure the target path must not
@@ -781,13 +888,7 @@ mod tests {
     fn generate_to_path_leaves_no_partial_file_on_failure() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let target = tmp.path().join("should_not_exist.rs");
-        let err = VanAvro::builder()
-            .schema_json(
-                r#"{"type":"record","name":"R","namespace":"t","fields":[
-                    {"name":"x","type":{"type":"array","items":["int","string","long"]}}
-                ]}"#,
-            )
-            .build()
+        let err = failing_codegen()
             .generate_to_path(&target)
             .expect_err("nested multi-variant union must fail codegen");
         assert!(matches!(err, GeneratorError::UnsupportedSchema { .. }));
@@ -795,5 +896,36 @@ mod tests {
             !target.exists(),
             "target path must not exist after failure: {target:?}"
         );
+    }
+
+    // SPEC §8.2 / §8.3 — likewise for a tree output: neither the root nor
+    // the module directory may exist after a codegen failure.
+    #[test]
+    fn generate_to_tree_leaves_no_partial_file_on_failure() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let target = tmp.path().join("should_not_exist.rs");
+        let err = failing_codegen()
+            .generate_to_tree(&target)
+            .expect_err("nested multi-variant union must fail codegen");
+        assert!(matches!(err, GeneratorError::UnsupportedSchema { .. }));
+        assert!(
+            !target.exists(),
+            "target path must not exist after failure: {target:?}"
+        );
+        let module_dir = tmp.path().join("should_not_exist");
+        assert!(
+            !module_dir.exists(),
+            "module directory must not exist after failure: {module_dir:?}"
+        );
+    }
+
+    fn failing_codegen() -> VanAvro {
+        VanAvro::builder()
+            .schema_json(
+                r#"{"type":"record","name":"R","namespace":"t","fields":[
+                    {"name":"x","type":{"type":"array","items":["int","string","long"]}}
+                ]}"#,
+            )
+            .build()
     }
 }

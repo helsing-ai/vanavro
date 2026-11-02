@@ -31,13 +31,14 @@ The CLI tool uses `clap` to process input schemas and protocols. Its current arg
 | :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--schemas <FILE...>`                | Input Avro schema files (`.avsc` JSON format). Can accept multiple files. Grouped with `--idl` as mutually exclusive.                                                                                                                                              |
 | `--idl <FILE>`                       | Input Avro IDL file (`.avdl` format). Mutually exclusive with `--schemas`.                                                                                                                                                                                         |
-| `-o`, `--output <FILE>`              | Output file path (defaults to writing to `stdout` if not specified).                                                                                                                                                                                               |
+| `-o`, `--output <FILE>`              | Output file path (defaults to writing to `stdout` if not specified). Written as a single file unless `--split` is given.                                                                                                                                            |
+| `--split`                            | Split `--output` into one file per namespace module (**Section 8.3**). Requires `--output`; stdout output is always a single file.                                                                                                                                 |
 | `--builder`                          | Derive `bon::Builder` for generated record types to enable ergonomic construction.                                                                                                                                                                                 |
 | `--no-non-exhaustive`                | Disable adding `#[non_exhaustive]` to generated enums. (By default, enums should be generated with `#[non_exhaustive]` to allow backward-compatible changes).                                                                                                      |
 | `--no-collapse-single-union`         | Disable the single-union-record collapse of **Section 5.6**. (By default such records collapse to a bare enum; this keeps them as a struct with a sibling `{Record}Union` enum).                                                                                   |
 | `--allow-unregistered-logical-types` | Tolerate a `logicalType` that matches no standard logical type and no registered custom mapping: ignore the annotation and lower the field to its base type instead of raising `UnknownLogicalType` (**Section 15.6**). By default such an annotation is an error. |
 
-The legacy `--split-schemas` flag is deliberately **not** provided: its `include_str!`-based implementation is broken (see **Section 4.2**) and output is always a single file.
+The legacy `--split-schemas` flag is deliberately **not** provided: its `include_str!`-based implementation is broken (see **Section 4.2**). The split output of **Section 8.3** is unrelated: it partitions the generated *Rust* source along module boundaries and embeds no `.avsc` files.
 
 ### 2.2. Builder Interface
 
@@ -67,16 +68,20 @@ impl<S: van_avro_builder::IsComplete> VanAvroBuilder<S> {
     pub fn generate(self) -> Result<String, GeneratorError>;
     pub fn generate_to_writer<W: Write>(self, writer: &mut W) -> Result<(), GeneratorError>;
     pub fn generate_to_path(self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
+    pub fn generate_to_tree(self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
 }
 
 impl VanAvro {
     pub fn generate(&self) -> Result<String, GeneratorError>;
     pub fn generate_to_writer<W: Write>(&self, writer: &mut W) -> Result<(), GeneratorError>;
     pub fn generate_to_path(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
+    pub fn generate_to_tree(&self, path: impl AsRef<Path>) -> Result<(), GeneratorError>;
 }
 ```
 
 See **Section 15** for the custom-logical-type registration semantics.
+
+`generate_to_path` writes the whole output to one file; `generate_to_tree` splits it into one file per namespace module (**Section 8.3**). Splitting is a separate output method rather than a builder option, because it only has meaning for a filesystem destination: `generate` and `generate_to_writer` produce a single stream and have nowhere to put module files. Keeping it out of `generate_to_path`'s signature also leaves that method unchanged from earlier releases.
 
 The legacy `register_logical_type` and `register_logical_type_with` convenience methods are not part of the current builder API. Register mappings with `.with_logical_type(CustomLogicalType::builder(...).build())` instead; compatibility wrappers for earlier API drafts are not required before `1.0`.
 
@@ -451,7 +456,7 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 
 | Variant                                                                    | Cause                                                                                                                                                                                    |
 | :------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Io(std::io::Error)`                                                       | Filesystem read/write of output files, or of `.avsc` inputs read by the CLI. Carries no path; for `generate_to_path` the OS error may name the sibling temp file (§8.2) rather than the requested output. A missing or unreadable `.avdl` is reported as `IdlParse`, not `Io`, because `avdl` performs the read. |
+| `Io(std::io::Error)`                                                       | Filesystem read/write of output files, or of `.avsc` inputs read by the CLI. Carries no path; for `generate_to_path` / `generate_to_tree` the OS error may name the sibling temp file (§8.2) rather than the requested output. A missing or unreadable `.avdl` is reported as `IdlParse`, not `Io`, because `avdl` performs the read. |
 | `SchemaParse { source: String, inner: apache_avro::Error }`                | `.avsc` JSON failed to parse; `source` is `"<schemas[N]>"` for the N-th input, or `"<merged registry>"` for the combined cross-reference pass. Inputs are JSON strings, so no file path is available. |
 | `IdlParse { source: String, inner: Box<dyn Error + Send + Sync> }`         | `.avdl` file failed to parse; `source` is the IDL path and `inner` the pre-rendered `avdl` diagnostic. Only exists with the `idl` feature.                                                |
 | `DuplicateName { name: String, first: String, second: String }`            | Same fully-qualified name declared in two inputs with non-equal schemas.                                                                                                                 |
@@ -468,7 +473,20 @@ The crate exposes a single error type `GeneratorError` re-exported from the crat
 
 - CLI renders errors with `miette`'s graphical handler; library users receive structured `GeneratorError` directly.
 - Source spans are **not** surfaced through `miette::Diagnostic`: `GeneratorError` carries no `#[diagnostic]` labels. The `avdl` diagnostic (source span, label, help) is pre-rendered to text inside `IdlParse::inner`; `apache-avro` errors carry no spans.
-- `generate_to_path` must write to a sibling temp file and atomically rename on success — never leave a partial output on failure.
+- `generate_to_path` and `generate_to_tree` must write to a sibling temp file and atomically rename on success — never leave a partial output on failure.
+  - For `generate_to_tree` (§8.3), each file is written atomically this way, and nothing is written at all if generation fails. The set of files as a whole is **not** atomic: an I/O failure midway can leave some module files updated and others not. Module files are written before the root, so the root never declares a module whose file has not been written in this run.
+
+### 8.3. Split Output
+
+`generate_to_tree(path)` (CLI: `--split`, which requires `--output`) partitions the generated source along the namespace module tree of §6.1, so large outputs are reviewable file by file:
+
+- `path` holds the root module: the root-namespace items, and a declaration for each top-level namespace module.
+- Every `pub mod x { … }` is moved into its own file and replaced in its parent by `#[path = "<dir>/x.rs"] pub mod x;`, recursively. For `out/gen.rs` the files are `out/gen/com.rs`, `out/gen/com/example.rs`, …, i.e. a directory named after `path`'s file stem holds the tree.
+- The `#[path]` attribute is **required**, not cosmetic. The output is meant to be `include!`d (§11.6), and a bare `mod x;` inside an `include!`d file resolves against the directory of the *including* source file (as `include_str!` does, §4.2), so it would not compile. A `#[path]` on an out-of-line module declared in a non-`mod.rs` file resolves relative to that file's own directory, so the root file declares `#[path = "gen/com.rs"]` and `gen/com.rs` declares `#[path = "com/example.rs"]`. This also makes the tree usable directly as a source module (`mod gen;` beside `gen.rs`).
+- File names are the module idents with any `r#` prefix removed (`pub mod r#type;` lives in `type.rs`). Module idents are snake_case and unique per parent (§5.2), so file names cannot collide.
+- Splitting is a pure partition: re-inlining every module file reproduces the single-file output's items in the same order. No item, path, or visibility changes, so cross-module references (§6.2) and the `pub(crate)` builders (§12.1) work identically. Each file is formatted like the single-file output (§11.6, §11.7).
+- `path` is expected to have a file extension and a valid UTF-8 file stem. This is the caller's responsibility and is deliberately **not** validated: without an extension the module directory would be `path` itself, and a non-UTF-8 stem is converted lossily, so the `#[path]` attributes would not match the directory written.
+- Module files from an earlier run whose namespace no longer exists are **not** deleted: they are unreferenced by the new root and do not affect compilation. vanavro never deletes files it did not just write.
 
 ---
 
