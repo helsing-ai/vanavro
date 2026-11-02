@@ -1861,7 +1861,7 @@ dependencies = [
 
 [[package]]
 name = "vanavro"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "apache-avro",
  "avdl",
@@ -1880,7 +1880,7 @@ dependencies = [
 
 [[package]]
 name = "vanavro-tests"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "apache-avro",
  "digest",
