@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.1] - 2026-11-02
+
+### Added
+
 - `generate_to_tree(path)` on the builder and on `VanAvro`: like
   `generate_to_path`, but writes one file per namespace module, mirroring the
   Rust module tree.
